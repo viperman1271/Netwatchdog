@@ -1,32 +1,99 @@
-# Prerequisites
-*.d
+# Visual Studio
+.vscode/
+*.code-workspace
+*.sln
+*.vcxproj
+*.vcxproj.filters
+*.vcxproj.user
+*.ncb
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+*.opensdf
+*.sdf
+*.cache
+*.ilk
+*.log
+*.tlog
+*.obj
+*.pdb
+*.ipch
+*.idb
+*.VC.db
+*.VC.VC.opendb
+*.VC.db-shm
+*.VC.db-wal
+*.VC.VC.opendb-shm
+*.VC.VC.opendb-wal
+*.ipdb
+*.iobj
+*.build
+
+# Visual Studio Code
+.vscode/
+.history/
+*.code-workspace
+
+# CMake
+CMakeFiles/
+CMakeCache.txt
+*.cmake
+cmake_install.cmake
+CTestTestfile.cmake
+Makefile
+
+# Build directories
+build/
+bin/
+lib/
+out/
+Debug/
+Release/
+x64/
+x86/
 
 # Compiled Object files
-*.slo
-*.lo
-*.o
 *.obj
+*.o
+*.lo
+*.slo
 
 # Precompiled Headers
 *.gch
 *.pch
 
-# Compiled Dynamic libraries
+# Libraries
+*.lib
+*.a
+*.la
+*.lo
+*.lai
 *.so
 *.dylib
 *.dll
-
-# Fortran module files
-*.mod
-*.smod
-
-# Compiled Static libraries
-*.lai
-*.la
-*.a
-*.lib
 
 # Executables
 *.exe
 *.out
 *.app
+*.i*86
+*.x86_64
+*.hex
+
+# Debug files
+*.dSYM/
+*.dSYM/*
+
+# Others
+*~
+*.swp
+*.swo
+*.bak
+*.orig
+*.rej
+*.old
+*.log
+*.csv
+*.trace
+*.dmp

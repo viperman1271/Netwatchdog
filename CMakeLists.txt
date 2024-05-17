@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.10)
 
 project(NetWatchdog)
 
-set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 # Include cppzmq submodule
@@ -33,8 +33,9 @@ add_executable(netwatchdogc ${CMAKE_SOURCE_DIR}/source/client/main.cpp)
 target_link_libraries(netwatchdogc common_lib)
 
 # Server executable
+set(NETWATCHDOGD_SRC_DIR ${CMAKE_SOURCE_DIR}/source/server)
 include_directories(${CMAKE_SOURCE_DIR}/source/server)
-add_executable(netwatchdogd source/server/main.cpp)
+add_executable(netwatchdogd ${NETWATCHDOGD_SRC_DIR}/main.cpp ${NETWATCHDOGD_SRC_DIR}/server.h ${NETWATCHDOGD_SRC_DIR}/server.cpp ${NETWATCHDOGD_SRC_DIR}/monitor.h ${NETWATCHDOGD_SRC_DIR}/monitor.cpp)
 target_link_libraries(netwatchdogd ${ZeroMQ_LIBRARIES} common_lib)
 
 #message(STATUS "ZeroMQ include dir: ${ZeroMQ_INCLUDE_DIRS}")

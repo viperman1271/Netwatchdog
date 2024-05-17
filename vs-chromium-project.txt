@@ -1,0 +1,17 @@
+[SearchableFiles.include]
+*
+
+[SourceExplorer.ignore]
+.git/
+.git*
+*.suo
+bin/
+build/
+*.txt
+*.md
+*.sh
+LICENSE
+*.cmake
+extern/cppzmq/cmake
+extern/cppzmq/libzmq-pkg-config
+extern/cppzmq/tests

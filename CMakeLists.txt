@@ -8,14 +8,14 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 find_path(ZeroMQ_INCLUDE_DIR zmq.h)
 find_library(ZeroMQ_LIBRARY NAMES zmq libzmq)
 
-if (ZeroMQ_INCLUDE_DIR AND ZeroMQ_LIBRARY)
-    set(ZeroMQ_LIBRARIES ${ZeroMQ_LIBRARY})
-    set(ZeroMQ_INCLUDE_DIRS ${ZeroMQ_INCLUDE_DIR})
-else()
-    message(FATAL_ERROR "ZeroMQ not found")
-endif()
+#if (ZeroMQ_INCLUDE_DIR AND ZeroMQ_LIBRARY)
+#    set(ZeroMQ_LIBRARIES ${ZeroMQ_LIBRARY})
+#    set(ZeroMQ_INCLUDE_DIRS ${ZeroMQ_INCLUDE_DIR})
+#else()
+#    message(FATAL_ERROR "ZeroMQ not found")
+#endif()
 
-include_directories(${ZeroMQ_INCLUDE_DIRS})
+#include_directories(${ZeroMQ_INCLUDE_DIRS})
 include_directories(${CMAKE_SOURCE_DIR}/source/lib)
 
 # Set the output directory for executables
@@ -27,7 +27,7 @@ foreach(configuration_type IN ITEMS Debug Release)
 endforeach()
 
 # Common library
-add_library(common_lib source/lib/netwatchdog.cpp)
+add_library(common_lib source/common/netwatchdog.cpp)
 
 # Client executable
 include_directories(${CMAKE_SOURCE_DIR}/source/client)
@@ -39,5 +39,5 @@ include_directories(${CMAKE_SOURCE_DIR}/source/server)
 add_executable(netwatchdogd source/server/main.cpp)
 target_link_libraries(netwatchdogd ${ZeroMQ_LIBRARIES} common_lib)
 
-message(STATUS "ZeroMQ include dir: ${ZeroMQ_INCLUDE_DIRS}")
-message(STATUS "ZeroMQ libraries: ${ZeroMQ_LIBRARIES}")
+#message(STATUS "ZeroMQ include dir: ${ZeroMQ_INCLUDE_DIRS}")
+#message(STATUS "ZeroMQ libraries: ${ZeroMQ_LIBRARIES}")

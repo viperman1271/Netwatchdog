@@ -30,7 +30,8 @@ set(NETWATCHDOG_COMMON_SRC_DIR ${CMAKE_SOURCE_DIR}/source/common)
 add_library(common_lib ${NETWATCHDOG_COMMON_SRC_DIR}/utils.h ${NETWATCHDOG_COMMON_SRC_DIR}/utils.cpp)
 
 # Client executable
-add_executable(netwatchdogc ${CMAKE_SOURCE_DIR}/source/client/main.cpp)
+set(NETWATCHDOGC_SRC_DIR ${CMAKE_SOURCE_DIR}/source/client)
+add_executable(netwatchdogc ${NETWATCHDOGC_SRC_DIR}/main.cpp ${NETWATCHDOGC_SRC_DIR}/client.h ${NETWATCHDOGC_SRC_DIR}/client.cpp)
 target_link_libraries(netwatchdogc common_lib)
 
 # Server executable

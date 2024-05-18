@@ -20,6 +20,7 @@ public:
 private:
     void Monitor();
     void HandleClientConnected(const zmq_event_t& zmqEvent, const char* addr);
+    void HandleClientConnected();
     void HandleClientDisconnected(const zmq_event_t& zmqEvent, const char* addr);
 
 private:

@@ -27,7 +27,7 @@ void NetWatchdogServer::Run()
         
         std::stringstream ss;
         ss << "tcp://*:" << m_Port;
-        std::cout << "Binding router server to " << ss.str() << std::endl;
+        std::cout << "Binding server to " << ss.str() << std::endl;
 
         m_ServerSocket.bind(ss.str());
     }
@@ -45,7 +45,13 @@ void NetWatchdogServer::Run()
 
     while (m_ShouldContinue.load())
     {
-        std::this_thread::sleep_for(1s);
+        zmq::message_t message;
+        if (m_ServerSocket.recv(message))
+        {
+            HandleClientConnected();
+            std::string str(static_cast<char*>(message.data()), message.size());
+            std::cout << "Recv: " << str << std::endl;
+        }
     };
 }
 
@@ -61,10 +67,15 @@ void NetWatchdogServer::Monitor()
 
 void NetWatchdogServer::HandleClientConnected(const zmq_event_t& zmqEvent, const char* addr)
 {
+    HandleClientConnected();
+}
 
+void NetWatchdogServer::HandleClientConnected()
+{
+    std::cout << "Connected" << std::endl;
 }
 
 void NetWatchdogServer::HandleClientDisconnected(const zmq_event_t& zmqEvent, const char* addr)
 {
-
+    std::cout << "Disconnected" << std::endl;
 }

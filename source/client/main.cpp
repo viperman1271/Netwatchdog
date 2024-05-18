@@ -14,7 +14,7 @@ int main()
     toml::value config;
     if (!std::filesystem::exists(configPath))
     {
-        std::cout << "Configuration file [" << configPath.string() << "] not found... creating.";
+        std::cout << "Configuration file [" << configPath.string() << "] not found... creating." << std::endl;
         config["connection"]["server"] = "localhost";
         config["connection"]["port"] = 32000;
         config["client"]["identity"] = uuids::to_string(uuids::uuid_random_generator(g_RNG)());
@@ -25,7 +25,7 @@ int main()
     }
     else
     {
-        std::cout << "Loading configuration file [" << configPath.string() << "].";
+        std::cout << "Loading configuration file [" << configPath.string() << "]." << std::endl;
         config = toml::parse(configPath.string());
     }
 

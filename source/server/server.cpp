@@ -21,7 +21,7 @@ void NetWatchdogServer::Run()
 {
     zmq::context_t context(1);
     {
-        m_ServerSocket = zmq::socket_t(context, zmq::socket_type::pair);
+        m_ServerSocket = zmq::socket_t(context, zmq::socket_type::router);
 
         const unsigned long long timeoutMs = std::chrono::duration_cast<std::chrono::milliseconds>(1s).count();
         m_ServerSocket.set(zmq::sockopt::rcvtimeo, static_cast<int>(timeoutMs));
@@ -51,7 +51,8 @@ void NetWatchdogServer::Run()
 
     while (m_ShouldContinue.load())
     {
-        std::shared_ptr<GenericMessage> msg = Communication::RecvMessage<GenericMessage, MessageType::GenericMessage>(m_ServerSocket);
+        std::string identity;
+        std::shared_ptr<GenericMessage> msg = Communication::RecvMessage<GenericMessage, MessageType::GenericMessage>(m_ServerSocket, identity);
         if (msg != nullptr)
         {
             HandleClientConnected(msg->GetId());
@@ -63,7 +64,7 @@ void NetWatchdogServer::Run()
             GenericMessage respMessage;
             respMessage.SetId(m_Identity);
             respMessage.SetSuccess(true);
-            Communication::SendMessage(respMessage, m_ServerSocket);
+            Communication::SendMessage(respMessage, m_ServerSocket, identity);
         }
     };
 
@@ -100,9 +101,6 @@ void NetWatchdogServer::HandleClientConnected(const std::string& identity)
 
 void NetWatchdogServer::HandleClientDisconnected(const zmq_event_t& zmqEvent, const char* addr)
 {
-    HeartbeatMessage heartbeatMessage;
-    Communication::SendMessage(heartbeatMessage, m_ServerSocket, zmq::send_flags::dontwait);
-
     std::vector<std::string> prevConnectedClients; 
     {
         std::lock_guard<std::mutex> lock(m_ClientsLock);
@@ -110,19 +108,16 @@ void NetWatchdogServer::HandleClientDisconnected(const zmq_event_t& zmqEvent, co
         m_ConnectedClients = {};
     }
 
-    const std::chrono::high_resolution_clock::time_point start = std::chrono::high_resolution_clock::now();
-    size_t numConnectedClients = 0;
+    HeartbeatMessage heartbeatMessage;
+    for (const std::string& prevConnectedClient : prevConnectedClients)
     {
-        std::lock_guard<std::mutex> lock(m_ClientsLock);
-        numConnectedClients = m_ConnectedClients.size();
+        Communication::SendMessage(heartbeatMessage, m_ServerSocket, prevConnectedClient, zmq::send_flags::dontwait);
     }
-    while (numConnectedClients < (prevConnectedClients.size() - 1) && (std::chrono::high_resolution_clock::now() - start) < 10s)
+
+    const std::chrono::high_resolution_clock::time_point start = std::chrono::high_resolution_clock::now();
+    while (m_ConnectedClients.size() < (prevConnectedClients.size() - 1) && (std::chrono::high_resolution_clock::now() - start) < 10s)
     {
         std::this_thread::sleep_for(1s);
-        {
-            std::lock_guard<std::mutex> lock(m_ClientsLock);
-            numConnectedClients = m_ConnectedClients.size();
-        }
     }
 
     std::unordered_set<std::string> currConnectedClients;

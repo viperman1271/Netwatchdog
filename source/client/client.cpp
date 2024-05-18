@@ -14,13 +14,13 @@ NetWatchdogClient::NetWatchdogClient(const std::string& host, const std::string&
     , m_Host(host)
     , m_Identity(identity)
     , m_ShouldContinue(true)
+    , m_Context(1)
 {
 }
 
-void NetWatchdogClient::Run()
+void NetWatchdogClient::Run(bool runThread)
 {
-    zmq::context_t context{ 1 };
-    m_Socket = zmq::socket_t(context, zmq::socket_type::pair);
+    m_Socket = zmq::socket_t(m_Context, zmq::socket_type::dealer);
 
     const unsigned long long timeoutMs = std::chrono::duration_cast<std::chrono::milliseconds>(10s).count();
     m_Socket.set(zmq::sockopt::rcvtimeo, static_cast<int>(timeoutMs));
@@ -36,30 +36,57 @@ void NetWatchdogClient::Run()
 
     m_Socket.connect(ss.str());
 
-    GenericMessage msg;
-    msg.SetId(m_Identity);
-    msg.SetSuccess(true);
-    Communication::SendMessage(msg, m_Socket);
-
-    if(std::shared_ptr<GenericMessage> srvMsg = Communication::RecvMessage<GenericMessage, MessageType::GenericMessage>(m_Socket))
+    std::function<void()> func = [this]()
     {
-        while (m_ShouldContinue)
+        GenericMessage msg;
+        msg.SetId(m_Identity);
+        msg.SetSuccess(true);
+        Communication::SendMessage(msg, m_Socket);
+
+        if (std::shared_ptr<GenericMessage> srvMsg = Communication::RecvMessage<GenericMessage, MessageType::GenericMessage>(m_Socket))
         {
-            if (std::shared_ptr<HeartbeatMessage> heartbeatMsg = Communication::RecvMessage<HeartbeatMessage, MessageType::Heartbeat>(m_Socket))
+            while (m_ShouldContinue)
             {
-                Communication::SendMessage(msg, m_Socket);
-            }
-        };
+                if (std::shared_ptr<HeartbeatMessage> heartbeatMsg = Communication::RecvMessage<HeartbeatMessage, MessageType::Heartbeat>(m_Socket))
+                {
+                    Communication::SendMessage(msg, m_Socket);
+                }
+            };
+        }
+        else
+        {
+            std::cerr << "Could not connect to server: " << m_Host << ":" << m_Port << std::endl;
+        }
+    };
+
+    if (runThread)
+    {
+        m_Thread = std::thread([this, func]()
+        {
+            std::stringstream ss;
+            ss << "NetWatchdogClient::" << m_Identity;
+            Utils::SetThreadName(ss.str());
+
+            func();
+            m_Socket.close();
+        });
     }
     else
     {
-        std::cerr << "Could not connect to server: " << m_Host << ":" << m_Port << std::endl;
+        func();
+        m_Socket.close();
     }
-    
-    m_Socket.close();
 }
 
 void NetWatchdogClient::Kill()
 {
     m_ShouldContinue.store(false);
+}
+
+void NetWatchdogClient::Wait()
+{
+    if (m_Thread.joinable())
+    {
+        m_Thread.join();
+    }
 }

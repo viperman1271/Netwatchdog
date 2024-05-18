@@ -7,8 +7,10 @@
 
 using namespace std::chrono_literals;
 
-NetWatchdogServer::NetWatchdogServer(int port)
+NetWatchdogServer::NetWatchdogServer(const std::string& listenAddress, const std::string& identity, int port)
     : m_Port(port)
+    , m_ListenAddress(listenAddress)
+    , m_Identity(identity)
     , m_ShouldContinue(true)
 {
 
@@ -26,7 +28,7 @@ void NetWatchdogServer::Run()
         zmq_socket_monitor(m_ServerSocket, "inproc://monitor", ZMQ_EVENT_CONNECTED | ZMQ_EVENT_DISCONNECTED);
         
         std::stringstream ss;
-        ss << "tcp://*:" << m_Port;
+        ss << "tcp://" << m_ListenAddress << ":" << m_Port;
         std::cout << "Binding server to " << ss.str() << std::endl;
 
         m_ServerSocket.bind(ss.str());

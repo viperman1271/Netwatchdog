@@ -32,6 +32,7 @@ int main()
     const std::string server = toml::find<std::string>(config, "connection", "server");
     const std::string identity = toml::find<std::string>(config, "client", "identity");
     const int port = toml::find<int>(config, "connection", "port");
+
     NetWatchdogClient client(server, identity, port);
     client.Run();
 

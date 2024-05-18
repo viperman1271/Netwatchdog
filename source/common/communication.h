@@ -8,10 +8,10 @@
 namespace Communication
 {
     template<class TMessage, MessageType TMessageType>
-    std::shared_ptr<TMessage> RecvMessage(zmq::socket_t& recvSocket, zmq::message_t& identity, bool verbose = false)
+    std::shared_ptr<TMessage> RecvMessage(zmq::socket_t& recvSocket, bool verbose = false)
     {
         zmq::message_t message;
-        if (recvSocket.recv(identity) && recvSocket.recv(message))
+        if (recvSocket.recv(message))
         {
             std::stringstream ss(std::string(static_cast<char*>(message.data()), message.size()));
             std::shared_ptr<Message> msg = Message::Serialize(ss);

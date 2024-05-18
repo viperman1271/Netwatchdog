@@ -1,5 +1,6 @@
 #include "server.h"
 
+#include "communication.h"
 #include "utils.h"
 
 #include <iostream>
@@ -41,7 +42,6 @@ void NetWatchdogServer::Run()
 		const int events = ZMQ_EVENT_CONNECTED | ZMQ_EVENT_DISCONNECTED;
         m_ConnectionMonitor.reset(new ConnectionMonitor());
 		m_ConnectionMonitor->Init(m_ServerSocket, "inproc://conmon", events);
-        m_ConnectionMonitor->SetCallback(ZMQ_EVENT_CONNECTED, [this](const zmq_event_t& zmqEvent, const char* addr) { HandleClientConnected(zmqEvent, addr); });
 		m_ConnectionMonitor->SetCallback(ZMQ_EVENT_DISCONNECTED, [this](const zmq_event_t& zmqEvent, const char* addr) { HandleClientDisconnected(zmqEvent, addr); });
 		m_MonitorThread = std::thread([this]()
 		{
@@ -51,12 +51,16 @@ void NetWatchdogServer::Run()
 
     while (m_ShouldContinue.load())
     {
-        zmq::message_t message;
-        if (m_ServerSocket.recv(message))
+        std::shared_ptr<GenericMessage> msg = Communication::RecvMessage<GenericMessage, MessageType::GenericMessage>(m_ServerSocket);
+        if (msg != nullptr)
         {
-            HandleClientConnected();
+            HandleClientConnected(msg->GetId());
+            m_ConnectedClients.push_back(msg->GetId());
 
-            m_ServerSocket.send(zmq::buffer(m_Identity), zmq::send_flags::none);
+            GenericMessage respMessage;
+            respMessage.SetId(m_Identity);
+            respMessage.SetSuccess(true);
+            Communication::SendMessage(respMessage, m_ServerSocket);
         }
     };
 
@@ -76,7 +80,7 @@ void NetWatchdogServer::Kill()
 
 void NetWatchdogServer::Monitor()
 {
-    Utils::SetThreadName("Broker::MonitorThread");
+    Utils::SetThreadName("NetWatchdogServer::MonitorThread");
 
     while (m_ShouldContinue.load())
     {
@@ -86,17 +90,15 @@ void NetWatchdogServer::Monitor()
     m_ConnectionMonitor.reset();
 }
 
-void NetWatchdogServer::HandleClientConnected(const zmq_event_t& zmqEvent, const char* addr)
+void NetWatchdogServer::HandleClientConnected(const std::string& identity)
 {
-    HandleClientConnected();
-}
-
-void NetWatchdogServer::HandleClientConnected()
-{
-    std::cout << "Connected" << std::endl;
+    std::cout << "Connected: " << identity << std::endl;
 }
 
 void NetWatchdogServer::HandleClientDisconnected(const zmq_event_t& zmqEvent, const char* addr)
 {
+    HeartbeatMessage heartbeatMessage;
+    Communication::SendMessage(heartbeatMessage, m_ServerSocket);
+
     std::cout << "Disconnected" << std::endl;
 }

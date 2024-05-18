@@ -34,7 +34,7 @@ public:
     bool GetSuccess() const { return m_Success; }
     void SetSuccess(bool value) { m_Success = value; }
 
-    const std::string& SetId() const { return m_Id; }
+    const std::string& GetId() const { return m_Id; }
     void SetId(const std::string& value) { m_Id = value; }
 
     template<class TSerializer>

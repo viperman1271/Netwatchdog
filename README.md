@@ -1,5 +1,5 @@
 # Netwatchdog
-![Logo](./Logo.png)
+![Logo](./Icon_256.png)
 
 [![License: MIT][license-badge]](./LICENSE) [![DOI][doi-badge]][doi-link]
 

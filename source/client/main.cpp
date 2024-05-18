@@ -73,9 +73,8 @@ void parseCommandLineOptions(int argc, char** argv, CommandLineOptions& options)
     {
         (app).parse((argc), (argv));
     }
-    catch (const CLI::ParseError& e)
+    catch (const CLI::ParseError&)
     {
-        app.exit(e);
     }
 }
 

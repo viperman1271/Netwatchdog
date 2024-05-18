@@ -26,7 +26,7 @@ namespace Communication
     }
 
     template<class TMessage>
-    void SendMessage(TMessage& message, zmq::socket_t& sendSocket, bool verbose = false)
+    void SendMessage(TMessage& message, zmq::socket_t& sendSocket, zmq::send_flags sendFlags = zmq::send_flags::none, bool verbose = false)
     {
         std::stringstream ss;
         {
@@ -34,7 +34,7 @@ namespace Communication
             message.serialize(serializer);
         }
 
-        sendSocket.send(zmq::buffer(ss.str()), zmq::send_flags::none);
+        sendSocket.send(zmq::buffer(ss.str()), sendFlags);
         if (verbose)
         {
             std::cout << "Sent: " << ss.str() << std::endl;

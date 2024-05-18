@@ -98,7 +98,30 @@ void NetWatchdogServer::HandleClientConnected(const std::string& identity)
 void NetWatchdogServer::HandleClientDisconnected(const zmq_event_t& zmqEvent, const char* addr)
 {
     HeartbeatMessage heartbeatMessage;
-    Communication::SendMessage(heartbeatMessage, m_ServerSocket);
+    Communication::SendMessage(heartbeatMessage, m_ServerSocket, zmq::send_flags::dontwait);
 
-    std::cout << "Disconnected" << std::endl;
+    std::vector<std::string> prevConnectedClients = std::move(m_ConnectedClients);
+    m_ConnectedClients = {};
+
+    const std::chrono::high_resolution_clock::time_point start = std::chrono::high_resolution_clock::now();
+    while (m_ConnectedClients.size() < (prevConnectedClients.size() - 1) && (std::chrono::high_resolution_clock::now() - start) < 10s)
+    {
+        std::this_thread::sleep_for(1s);
+    }
+
+    std::unordered_set<std::string> currConnectedClients(m_ConnectedClients.begin(), m_ConnectedClients.end());
+
+    prevConnectedClients.erase(
+        std::remove_if(
+            prevConnectedClients.begin(),
+            prevConnectedClients.end(),
+            [&currConnectedClients](const std::string& item) { return currConnectedClients.find(item) != currConnectedClients.end(); }
+        ),
+        prevConnectedClients.end()
+    );
+
+    for (const std::string& disconnectedClient : prevConnectedClients)
+    {
+        std::cout << "Disconnected" << disconnectedClient << std::endl;
+    }
 }

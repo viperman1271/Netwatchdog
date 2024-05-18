@@ -60,29 +60,36 @@ void loadOrCreateConfig(CommandLineOptions& options)
     options.identity = toml::find<std::string>(config, "client", "identity");
 }
 
-void parseCommandLineOptions(int argc, char** argv, CommandLineOptions& options)
+bool parseCommandLineOptions(int argc, char** argv, CommandLineOptions& options)
 {
     CLI::App app{ "NetWatchdog - ZeroMQ based network monitoring tool." };
 
     app.add_option("-p,--port", options.port, "The port to use");
-    app.add_option("-h,--host", options.host, "Host to connect to");
     app.add_option("-i,--identity", options.identity, "Host to connect to");
     app.add_option("-c,--clientCount", options.clientCount, "Number of clients to spawn.");
+    app.add_option("--host", options.host, "Host to connect to");
 
     try
     {
         (app).parse((argc), (argv));
     }
-    catch (const CLI::ParseError&)
+    catch (const CLI::ParseError& e)
     {
+        app.exit(e);
+        return false;
     }
+
+    return true;
 }
 
 int main(int argc, char** argv)
 {
     CommandLineOptions options;
     loadOrCreateConfig(options);
-    parseCommandLineOptions(argc, argv, options);
+    if (!parseCommandLineOptions(argc, argv, options))
+    {
+        return -1;
+    }
 
     if(options.clientCount > 1)
     {

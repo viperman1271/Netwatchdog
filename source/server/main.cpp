@@ -60,28 +60,34 @@ void loadOrCreateConfig(CommandLineOptions& options)
     options.identity = toml::find<std::string>(config, "server", "identity");
 }
 
-void parseCommandLineOptions(int argc, char** argv, CommandLineOptions& options)
+bool parseCommandLineOptions(int argc, char** argv, CommandLineOptions& options)
 {
     CLI::App app{ "NetWatchdog - ZeroMQ based network monitoring tool." };
 
     app.add_option("-p,--port", options.port, "The port to use [defaults to 32000]");
-    app.add_option("-h,--host", options.host, "Listening address for the server [defaults to *]");
     app.add_option("-i,--identity", options.identity, "Host's identity");
+    app.add_option("--host", options.host, "Listening address for the server [defaults to *]");
 
     try
     {
         (app).parse((argc), (argv));
     }
-    catch (const CLI::ParseError&)
+    catch (const CLI::ParseError& e)
     {
+        app.exit(e);
+        return false;
     }
+    return true;
 }
 
 int main(int argc, char** argv)
 {
     CommandLineOptions options;
     loadOrCreateConfig(options);
-    parseCommandLineOptions(argc, argv, options);
+    if (!parseCommandLineOptions(argc, argv, options))
+    {
+        return -1;
+    }
 
     NetWatchdogServer server(options.host, options.identity, options.port);
 

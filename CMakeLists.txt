@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.10)
 
 project(NetWatchdog)
 
-set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 # Include cppzmq submodule
@@ -26,15 +26,18 @@ foreach(configuration_type IN ITEMS Debug Release)
 endforeach()
 
 # Common library
-add_library(common_lib source/common/netwatchdog.cpp)
+set(NETWATCHDOG_COMMON_SRC_DIR ${CMAKE_SOURCE_DIR}/source/common)
+add_library(common_lib ${NETWATCHDOG_COMMON_SRC_DIR}/utils.h ${NETWATCHDOG_COMMON_SRC_DIR}/utils.cpp)
 
 # Client executable
-add_executable(netwatchdogc ${CMAKE_SOURCE_DIR}/source/client/main.cpp)
+set(NETWATCHDOGC_SRC_DIR ${CMAKE_SOURCE_DIR}/source/client)
+add_executable(netwatchdogc ${NETWATCHDOGC_SRC_DIR}/main.cpp ${NETWATCHDOGC_SRC_DIR}/client.h ${NETWATCHDOGC_SRC_DIR}/client.cpp)
 target_link_libraries(netwatchdogc common_lib)
 
 # Server executable
-include_directories(${CMAKE_SOURCE_DIR}/source/server)
-add_executable(netwatchdogd source/server/main.cpp)
+set(NETWATCHDOGD_SRC_DIR ${CMAKE_SOURCE_DIR}/source/server)
+include_directories(${NETWATCHDOGD_SRC_DIR} ${NETWATCHDOG_COMMON_SRC_DIR})
+add_executable(netwatchdogd ${NETWATCHDOGD_SRC_DIR}/main.cpp ${NETWATCHDOGD_SRC_DIR}/server.h ${NETWATCHDOGD_SRC_DIR}/server.cpp ${NETWATCHDOGD_SRC_DIR}/monitor.h ${NETWATCHDOGD_SRC_DIR}/monitor.cpp)
 target_link_libraries(netwatchdogd ${ZeroMQ_LIBRARIES} common_lib)
 
 #message(STATUS "ZeroMQ include dir: ${ZeroMQ_INCLUDE_DIRS}")

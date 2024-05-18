@@ -4,6 +4,7 @@
 
 #include <zmq.hpp>
 
+#include <mutex>
 #include <thread>
 
 class NetWatchdogServer final
@@ -37,6 +38,7 @@ private:
     std::thread m_PendingWorkThread;
     std::thread m_MonitorThread;
 
+    std::mutex m_ClientsLock;
     std::vector<std::string> m_ConnectedClients;
     std::unique_ptr<ConnectionMonitor> m_ConnectionMonitor;
 };

@@ -25,8 +25,21 @@ namespace Communication
         return {};
     }
 
+    template<class TMessage, MessageType TMessageType>
+    std::shared_ptr<TMessage> RecvMessage(zmq::socket_t& recvSocket, std::string& out_identity, bool verbose = false)
+    {
+        zmq::message_t message;
+        if (recvSocket.recv(message))
+        {
+            out_identity = { static_cast<char*>(message.data()), message.size() };
+            return RecvMessage<TMessage, TMessageType>(recvSocket);
+        }
+
+        return {};
+    }
+
     template<class TMessage>
-    void SendMessage(TMessage& message, zmq::socket_t& sendSocket, bool verbose = false)
+    void SendMessage(TMessage& message, zmq::socket_t& sendSocket, zmq::send_flags sendFlags = zmq::send_flags::none, bool verbose = false)
     {
         std::stringstream ss;
         {
@@ -34,10 +47,17 @@ namespace Communication
             message.serialize(serializer);
         }
 
-        sendSocket.send(zmq::buffer(ss.str()), zmq::send_flags::none);
+        sendSocket.send(zmq::buffer(ss.str()), sendFlags);
         if (verbose)
         {
             std::cout << "Sent: " << ss.str() << std::endl;
         }
+    }
+
+    template<class TMessage>
+    void SendMessage(TMessage& message, zmq::socket_t& sendSocket, const std::string& identity, zmq::send_flags sendFlags = zmq::send_flags::none, bool verbose = false)
+    {
+        sendSocket.send(zmq::buffer(identity), zmq::send_flags::sndmore);
+        SendMessage<TMessage>(message, sendSocket, sendFlags, verbose);
     }
 }

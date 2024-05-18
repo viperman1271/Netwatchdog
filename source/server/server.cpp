@@ -21,7 +21,7 @@ void NetWatchdogServer::Run()
 {
     zmq::context_t context(1);
     {
-        m_ServerSocket = zmq::socket_t(context, zmq::socket_type::pair);
+        m_ServerSocket = zmq::socket_t(context, zmq::socket_type::router);
 
         const unsigned long long timeoutMs = std::chrono::duration_cast<std::chrono::milliseconds>(1s).count();
         m_ServerSocket.set(zmq::sockopt::rcvtimeo, static_cast<int>(timeoutMs));
@@ -51,16 +51,20 @@ void NetWatchdogServer::Run()
 
     while (m_ShouldContinue.load())
     {
-        std::shared_ptr<GenericMessage> msg = Communication::RecvMessage<GenericMessage, MessageType::GenericMessage>(m_ServerSocket);
+        std::string identity;
+        std::shared_ptr<GenericMessage> msg = Communication::RecvMessage<GenericMessage, MessageType::GenericMessage>(m_ServerSocket, identity);
         if (msg != nullptr)
         {
             HandleClientConnected(msg->GetId());
-            m_ConnectedClients.push_back(msg->GetId());
+            {
+                std::lock_guard<std::mutex> lock(m_ClientsLock);
+                m_ConnectedClients.push_back(msg->GetId());
+            }
 
             GenericMessage respMessage;
             respMessage.SetId(m_Identity);
             respMessage.SetSuccess(true);
-            Communication::SendMessage(respMessage, m_ServerSocket);
+            Communication::SendMessage(respMessage, m_ServerSocket, identity);
         }
     };
 
@@ -97,8 +101,42 @@ void NetWatchdogServer::HandleClientConnected(const std::string& identity)
 
 void NetWatchdogServer::HandleClientDisconnected(const zmq_event_t& zmqEvent, const char* addr)
 {
-    HeartbeatMessage heartbeatMessage;
-    Communication::SendMessage(heartbeatMessage, m_ServerSocket);
+    std::vector<std::string> prevConnectedClients; 
+    {
+        std::lock_guard<std::mutex> lock(m_ClientsLock);
+        prevConnectedClients = std::move(m_ConnectedClients);
+        m_ConnectedClients = {};
+    }
 
-    std::cout << "Disconnected" << std::endl;
+    HeartbeatMessage heartbeatMessage;
+    for (const std::string& prevConnectedClient : prevConnectedClients)
+    {
+        Communication::SendMessage(heartbeatMessage, m_ServerSocket, prevConnectedClient, zmq::send_flags::dontwait);
+    }
+
+    const std::chrono::high_resolution_clock::time_point start = std::chrono::high_resolution_clock::now();
+    while (m_ConnectedClients.size() < (prevConnectedClients.size() - 1) && (std::chrono::high_resolution_clock::now() - start) < 10s)
+    {
+        std::this_thread::sleep_for(1s);
+    }
+
+    std::unordered_set<std::string> currConnectedClients;
+    {
+        std::lock_guard<std::mutex> lock(m_ClientsLock);
+        currConnectedClients = { m_ConnectedClients.begin(), m_ConnectedClients.end() };
+    }
+
+    prevConnectedClients.erase(
+        std::remove_if(
+            prevConnectedClients.begin(),
+            prevConnectedClients.end(),
+            [&currConnectedClients](const std::string& item) { return currConnectedClients.find(item) != currConnectedClients.end(); }
+        ),
+        prevConnectedClients.end()
+    );
+
+    for (const std::string& disconnectedClient : prevConnectedClients)
+    {
+        std::cout << "Disconnected: " << disconnectedClient << std::endl;
+    }
 }

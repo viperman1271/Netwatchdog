@@ -11,3 +11,10 @@ namespace Utils
 }
 
 static std::mt19937 g_RNG(static_cast<unsigned int>(std::chrono::system_clock::now().time_since_epoch().count()));
+
+namespace zmq::sockopt
+{
+#ifdef ZMQ_IDENTITY
+ZMQ_DEFINE_ARRAY_OPT_BINARY(ZMQ_IDENTITY, identity);
+#endif
+}

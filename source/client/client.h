@@ -27,6 +27,7 @@ public:
 private:
     const int m_Port;
     const std::string m_Host;
+    const std::string m_Identity;
 
     zmq::socket_t m_Socket;
     std::thread m_Thread;

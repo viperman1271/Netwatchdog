@@ -21,8 +21,6 @@ if (NOT EXISTS ${CLI11_INCLUDE_DIR}/CLI/CLI.hpp)
     message(FATAL_ERROR "cli11 not found at ${CLI11_INCLUDE_DIR}")
 endif()
 
-add_subdirectory(extern/cli11)
-
 include_directories(${CPPZMQ_INCLUDE_DIR})
 include_directories(${TOML11_INCLUDE_DIR})
 include_directories(${CLI11_INCLUDE_DIR})
@@ -40,20 +38,22 @@ endforeach()
 
 # Common library
 set(NETWATCHDOG_COMMON_SRC_DIR ${CMAKE_SOURCE_DIR}/source/common)
-add_library(common_lib ${NETWATCHDOG_COMMON_SRC_DIR}/utils.h ${NETWATCHDOG_COMMON_SRC_DIR}/utils.cpp ${NETWATCHDOG_COMMON_SRC_DIR}/messages.h ${NETWATCHDOG_COMMON_SRC_DIR}/messages.cpp ${NETWATCHDOG_COMMON_SRC_DIR}/communication.h ${NETWATCHDOG_COMMON_SRC_DIR}/options.h ${NETWATCHDOG_COMMON_SRC_DIR}/config.h)
-target_compile_definitions(common_lib PRIVATE NETWATCHDOG_COMMON_LIB)
+file(GLOB LIBNETWATCHDOG_SOURCES ${NETWATCHDOG_COMMON_SRC_DIR}/*.*)
 
 # Client executable
 set(NETWATCHDOGC_SRC_DIR ${CMAKE_SOURCE_DIR}/source/client)
-add_executable(netwatchdogc ${NETWATCHDOGC_SRC_DIR}/main.cpp ${NETWATCHDOGC_SRC_DIR}/client.h ${NETWATCHDOGC_SRC_DIR}/client.cpp)
-target_link_libraries(netwatchdogc common_lib)
+add_executable(netwatchdogc ${NETWATCHDOGC_SRC_DIR}/main.cpp ${NETWATCHDOGC_SRC_DIR}/client.h ${NETWATCHDOGC_SRC_DIR}/client.cpp ${LIBNETWATCHDOG_SOURCES})
+target_link_libraries(netwatchdogc)
 target_compile_definitions(netwatchdogc PRIVATE NETWATCHDOG_CLIENT)
+
+#add_subdirectory(extern/mongo-c-driver)
+#add_subdirectory(extern/mongo-cxx-driver)
 
 # Server executable
 set(NETWATCHDOGD_SRC_DIR ${CMAKE_SOURCE_DIR}/source/server)
 include_directories(${NETWATCHDOGD_SRC_DIR} ${NETWATCHDOG_COMMON_SRC_DIR})
-add_executable(netwatchdogd ${NETWATCHDOGD_SRC_DIR}/main.cpp ${NETWATCHDOGD_SRC_DIR}/server.h ${NETWATCHDOGD_SRC_DIR}/server.cpp ${NETWATCHDOGD_SRC_DIR}/monitor.h ${NETWATCHDOGD_SRC_DIR}/monitor.cpp)
-target_link_libraries(netwatchdogd ${ZeroMQ_LIBRARIES} common_lib)
+add_executable(netwatchdogd ${NETWATCHDOGD_SRC_DIR}/main.cpp ${NETWATCHDOGD_SRC_DIR}/server.h ${NETWATCHDOGD_SRC_DIR}/server.cpp ${NETWATCHDOGD_SRC_DIR}/monitor.h ${NETWATCHDOGD_SRC_DIR}/monitor.cpp ${LIBNETWATCHDOG_SOURCES})
+target_link_libraries(netwatchdogd ${ZeroMQ_LIBRARIES})
 target_compile_definitions(netwatchdogd PRIVATE NETWATCHDOG_SERVER)
 
 #message(STATUS "ZeroMQ include dir: ${ZeroMQ_INCLUDE_DIRS}")

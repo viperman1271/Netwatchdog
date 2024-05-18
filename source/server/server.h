@@ -19,10 +19,13 @@ public:
 
 private:
     void Monitor();
+    void HandleClientConnected(const zmq_event_t& zmqEvent, const char* addr);
     void HandleClientDisconnected(const zmq_event_t& zmqEvent, const char* addr);
 
 private:
     const int m_Port;
+
+    std::atomic<bool> m_ShouldContinue;
 
     zmq::socket_t m_ServerSocket;
     zmq::socket_t m_MonitorSocket;

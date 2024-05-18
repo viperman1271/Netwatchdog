@@ -2,6 +2,7 @@
 
 #include "utils.h"
 
+#include <CLI/CLI.hpp>
 #include <toml.hpp>
 #include <stduuid/uuid.h>
 
@@ -23,7 +24,16 @@ void handle_signal(int signal)
     }
 }
 
-int main()
+struct CommandLineOptions
+{
+    int port = 32000;
+
+    std::string host = "*";
+    std::string identity;
+};
+
+
+void loadOrCreateConfig(CommandLineOptions& options)
 {
     const std::filesystem::path& configPath = Utils::GetServerConfigPath();
 
@@ -45,11 +55,35 @@ int main()
         config = toml::parse(configPath.string());
     }
 
-    const std::string listenAddress = toml::find<std::string>(config, "server", "listen_address");
-    const std::string identity = toml::find<std::string>(config, "server", "identity");
-    const int port = toml::find<int>(config, "server", "port");
+    options.host = toml::find<std::string>(config, "server", "listen_address");
+    options.port = toml::find<int>(config, "server", "port");
+    options.identity = toml::find<std::string>(config, "server", "identity");
+}
 
-    NetWatchdogServer server(listenAddress, identity, port);
+void parseCommandLineOptions(int argc, char** argv, CommandLineOptions& options)
+{
+    CLI::App app{ "NetWatchdog - ZeroMQ based network monitoring tool." };
+
+    app.add_option("-p,--port", options.port, "The port to use [defaults to 32000]");
+    app.add_option("-h,--host", options.host, "Listening address for the server [defaults to *]");
+    app.add_option("-i,--identity", options.identity, "Host's identity");
+
+    try
+    {
+        (app).parse((argc), (argv));
+    }
+    catch (const CLI::ParseError&)
+    {
+    }
+}
+
+int main(int argc, char** argv)
+{
+    CommandLineOptions options;
+    loadOrCreateConfig(options);
+    parseCommandLineOptions(argc, argv, options);
+
+    NetWatchdogServer server(options.host, options.identity, options.port);
 
     g_CallbackFunc = [&server]()
     {

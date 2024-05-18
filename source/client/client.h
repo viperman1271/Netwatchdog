@@ -16,7 +16,7 @@ class NetWatchdogServer final
 class NetWatchdogClient final
 {
 public:
-    NetWatchdogClient(const std::string& host, int port = 32000);
+    NetWatchdogClient(const std::string& host, const std::string& identity, int port = 32000);
     ~NetWatchdogClient() = default;
 
     void Run();

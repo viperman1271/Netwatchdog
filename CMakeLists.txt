@@ -12,7 +12,14 @@ if (NOT EXISTS ${CPPZMQ_INCLUDE_DIR}/zmq.hpp)
     message(FATAL_ERROR "cppzmq not found at ${CPPZMQ_INCLUDE_DIR}")
 endif()
 
+set(TOML11_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/extern/toml11)
+
+if (NOT EXISTS ${TOML11_INCLUDE_DIR}/toml.hpp)
+    message(FATAL_ERROR "toml11 not found at ${TOML11_INCLUDE_DIR}")
+endif()
+
 include_directories(${CPPZMQ_INCLUDE_DIR})
+include_directories(${TOML11_INCLUDE_DIR})
 include_directories(${CMAKE_SOURCE_DIR}/source/lib)
 include_directories(${CMAKE_SOURCE_DIR}/source/client)
 include_directories(${CMAKE_SOURCE_DIR}/source/server)

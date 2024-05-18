@@ -22,6 +22,9 @@ void NetWatchdogServer::Run()
     {
         m_ServerSocket = zmq::socket_t(context, zmq::socket_type::pair);
 
+        const unsigned long long timeoutMs = std::chrono::duration_cast<std::chrono::milliseconds>(1s).count();
+        m_ServerSocket.set(zmq::sockopt::rcvtimeo, static_cast<int>(timeoutMs));
+
         const unsigned long long lingerMs = std::chrono::duration_cast<std::chrono::milliseconds>(1s).count();
         m_ServerSocket.set(zmq::sockopt::linger, static_cast<int>(lingerMs));
 
@@ -36,9 +39,10 @@ void NetWatchdogServer::Run()
 
     {
 		const int events = ZMQ_EVENT_CONNECTED | ZMQ_EVENT_DISCONNECTED;
-		m_ConnectionMonitor.Init(m_ServerSocket, "inproc://conmon", events);
-        m_ConnectionMonitor.SetCallback(ZMQ_EVENT_CONNECTED, [this](const zmq_event_t& zmqEvent, const char* addr) { HandleClientConnected(zmqEvent, addr); });
-		m_ConnectionMonitor.SetCallback(ZMQ_EVENT_DISCONNECTED, [this](const zmq_event_t& zmqEvent, const char* addr) { HandleClientDisconnected(zmqEvent, addr); });
+        m_ConnectionMonitor.reset(new ConnectionMonitor());
+		m_ConnectionMonitor->Init(m_ServerSocket, "inproc://conmon", events);
+        m_ConnectionMonitor->SetCallback(ZMQ_EVENT_CONNECTED, [this](const zmq_event_t& zmqEvent, const char* addr) { HandleClientConnected(zmqEvent, addr); });
+		m_ConnectionMonitor->SetCallback(ZMQ_EVENT_DISCONNECTED, [this](const zmq_event_t& zmqEvent, const char* addr) { HandleClientDisconnected(zmqEvent, addr); });
 		m_MonitorThread = std::thread([this]()
 		{
 			Monitor();
@@ -51,20 +55,35 @@ void NetWatchdogServer::Run()
         if (m_ServerSocket.recv(message))
         {
             HandleClientConnected();
-            std::string str(static_cast<char*>(message.data()), message.size());
-            std::cout << "Recv: " << str << std::endl;
+
+            m_ServerSocket.send(zmq::buffer(m_Identity), zmq::send_flags::none);
         }
     };
+
+    m_ServerSocket.close();
+    context.close();
+
+    if (m_MonitorThread.joinable())
+    {
+        m_MonitorThread.join();
+    }
+}
+
+void NetWatchdogServer::Kill()
+{
+    m_ShouldContinue.store(false);
 }
 
 void NetWatchdogServer::Monitor()
 {
     Utils::SetThreadName("Broker::MonitorThread");
 
-    while (m_ShouldContinue)
+    while (m_ShouldContinue.load())
     {
-        m_ConnectionMonitor.CheckEvent(1s);
+        m_ConnectionMonitor->CheckEvent(1s);
     };
+
+    m_ConnectionMonitor.reset();
 }
 
 void NetWatchdogServer::HandleClientConnected(const zmq_event_t& zmqEvent, const char* addr)

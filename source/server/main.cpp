@@ -5,7 +5,23 @@
 #include <toml.hpp>
 #include <stduuid/uuid.h>
 
+#include <csignal>
 #include <iostream>
+
+std::function<void()> g_CallbackFunc;
+
+// Signal handler function
+void handle_signal(int signal) 
+{
+    if (signal == SIGINT) 
+    {
+        std::cout << "SIGINT received, shutting down..." << std::endl;
+        if (g_CallbackFunc)
+        {
+            g_CallbackFunc();
+        }
+    }
+}
 
 int main()
 {
@@ -34,6 +50,13 @@ int main()
     const int port = toml::find<int>(config, "server", "port");
 
     NetWatchdogServer server(listenAddress, identity, port);
+
+    g_CallbackFunc = [&server]()
+    {
+        server.Kill();
+    };
+    std::signal(SIGINT, handle_signal);
+
     server.Run();
 
     return 0;

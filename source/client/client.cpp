@@ -12,6 +12,7 @@ NetWatchdogClient::NetWatchdogClient(const std::string& host, const std::string&
     : m_Port(port)
     , m_Host(host)
     , m_Identity(identity)
+    , m_ShouldContinue(true)
 {
 }
 
@@ -35,8 +36,23 @@ void NetWatchdogClient::Run()
     m_Socket.connect(ss.str());
     m_Socket.send(zmq::buffer(m_Identity), zmq::send_flags::none);
 
-    while (true)
+    zmq::message_t message;
+    if (m_Socket.recv(message))
     {
-        std::this_thread::sleep_for(1s);
-    };
+        while (m_ShouldContinue)
+        {
+            std::this_thread::sleep_for(1s);
+        };
+    }
+    else
+    {
+        std::cerr << "Could not connect to server: " << m_Host << ":" << m_Port << std::endl;
+    }
+    
+    m_Socket.close();
+}
+
+void NetWatchdogClient::Kill()
+{
+    m_ShouldContinue.store(false);
 }

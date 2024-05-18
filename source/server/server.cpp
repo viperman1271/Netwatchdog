@@ -107,8 +107,8 @@ void NetWatchdogServer::HandleClientDisconnected(const zmq_event_t& zmqEvent, co
     {
         std::lock_guard<std::mutex> lock(m_ClientsLock);
         prevConnectedClients = std::move(m_ConnectedClients);
+        m_ConnectedClients = {};
     }
-    m_ConnectedClients = {};
 
     const std::chrono::high_resolution_clock::time_point start = std::chrono::high_resolution_clock::now();
     size_t numConnectedClients = 0;
@@ -142,6 +142,6 @@ void NetWatchdogServer::HandleClientDisconnected(const zmq_event_t& zmqEvent, co
 
     for (const std::string& disconnectedClient : prevConnectedClients)
     {
-        std::cout << "Disconnected" << disconnectedClient << std::endl;
+        std::cout << "Disconnected: " << disconnectedClient << std::endl;
     }
 }

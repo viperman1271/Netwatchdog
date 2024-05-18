@@ -7,3 +7,6 @@
 [submodule "extern/toml11"]
 	path = extern/toml11
 	url = git@github.com:ToruNiina/toml11.git
+[submodule "extern/cereal"]
+	path = extern/cereal
+	url = git@github.com:USCiLab/cereal.git

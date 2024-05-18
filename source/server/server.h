@@ -20,8 +20,7 @@ public:
 
 private:
     void Monitor();
-    void HandleClientConnected(const zmq_event_t& zmqEvent, const char* addr);
-    void HandleClientConnected();
+    void HandleClientConnected(const std::string& identity);
     void HandleClientDisconnected(const zmq_event_t& zmqEvent, const char* addr);
 
 private:
@@ -38,5 +37,6 @@ private:
     std::thread m_PendingWorkThread;
     std::thread m_MonitorThread;
 
+    std::vector<std::string> m_ConnectedClients;
     std::unique_ptr<ConnectionMonitor> m_ConnectionMonitor;
 };

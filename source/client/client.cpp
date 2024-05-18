@@ -1,5 +1,6 @@
 #include "client.h"
 
+#include "communication.h"
 #include "utils.h"
 
 #include <chrono>
@@ -34,14 +35,20 @@ void NetWatchdogClient::Run()
     std::cout << "Connecting client to " << ss.str() << std::endl;
 
     m_Socket.connect(ss.str());
-    m_Socket.send(zmq::buffer(m_Identity), zmq::send_flags::none);
 
-    zmq::message_t message;
-    if (m_Socket.recv(message))
+    GenericMessage msg;
+    msg.SetId(m_Identity);
+    msg.SetSuccess(true);
+    Communication::SendMessage(msg, m_Socket);
+
+    if(std::shared_ptr<GenericMessage> srvMsg = Communication::RecvMessage<GenericMessage, MessageType::GenericMessage>(m_Socket))
     {
         while (m_ShouldContinue)
         {
-            std::this_thread::sleep_for(1s);
+            if (std::shared_ptr<HeartbeatMessage> heartbeatMsg = Communication::RecvMessage<HeartbeatMessage, MessageType::Heartbeat>(m_Socket))
+            {
+                Communication::SendMessage(msg, m_Socket);
+            }
         };
     }
     else

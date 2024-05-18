@@ -41,7 +41,7 @@ Usage: C:\git\NetWatchdog\bin\Debug\netwatchdogd.exe [OPTIONS]
 Options:
   -h,--help                   Print this help message and exit
   -p,--port INT               The port to use [defaults to 32000]
-  -i,--identity TEXT          Host's identity
+  -i,--identity TEXT          Identity
   --host TEXT                 Listening address for the server [defaults to *]
 ```
 
@@ -53,8 +53,8 @@ Usage: C:\git\NetWatchdog\bin\Debug\netwatchdogc.exe [OPTIONS]
 
 Options:
   -h,--help                   Print this help message and exit
-  -p,--port INT               The port to use
-  -i,--identity TEXT          Host to connect to
+  -p,--port INT               The port to use [defaults to 32000]
+  -i,--identity TEXT          Identity
   -c,--clientCount UINT       Number of clients to spawn.
   --host TEXT                 Host to connect to
 ```

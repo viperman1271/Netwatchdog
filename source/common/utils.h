@@ -8,8 +8,7 @@
 namespace Utils
 {
     std::filesystem::path& GetBasePath();
-    std::filesystem::path& GetLocalConfigPath();
-    std::filesystem::path& GetServerConfigPath();
+    std::filesystem::path& GetConfigPath();
 
     void SetThreadName(std::thread& thread, const std::string& name);
     void SetThreadName(const std::string& name);

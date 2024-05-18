@@ -2,18 +2,16 @@
 
 #include "utils.h"
 
-#include <stduuid/uuid.h>
-
 #include <chrono>
 #include <filesystem>
 #include <iostream>
 
 using namespace std::chrono_literals;
 
-NetWatchdogClient::NetWatchdogClient(const std::string& host, int port /*= 32000*/)
+NetWatchdogClient::NetWatchdogClient(const std::string& host, const std::string& identity, int port /*= 32000*/)
     : m_Port(port)
     , m_Host(host)
-    , m_Identity(uuids::to_string(uuids::uuid_random_generator(g_RNG)()))
+    , m_Identity(identity)
 {
 }
 

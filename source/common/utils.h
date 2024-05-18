@@ -1,11 +1,16 @@
 #pragma once
 
 #include <chrono>
+#include <filesystem>
 #include <random>
 #include <thread>
 
 namespace Utils
 {
+    std::filesystem::path& GetBasePath();
+    std::filesystem::path& GetLocalConfigPath();
+    std::filesystem::path& GetServerConfigPath();
+
     void SetThreadName(std::thread& thread, const std::string& name);
     void SetThreadName(const std::string& name);
 }

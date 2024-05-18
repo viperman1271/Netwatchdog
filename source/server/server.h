@@ -9,7 +9,7 @@
 class NetWatchdogServer final
 {
 public:
-    NetWatchdogServer(int port = 32000);
+    NetWatchdogServer(const std::string& listenAddress, const std::string& identity, int port = 32000);
     ~NetWatchdogServer() = default;
 
     void Run();
@@ -25,6 +25,8 @@ private:
 
 private:
     const int m_Port;
+    const std::string m_ListenAddress;
+    const std::string m_Identity;
 
     std::atomic<bool> m_ShouldContinue;
 

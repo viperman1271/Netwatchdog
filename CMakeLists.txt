@@ -34,7 +34,7 @@ endforeach()
 
 # Common library
 set(NETWATCHDOG_COMMON_SRC_DIR ${CMAKE_SOURCE_DIR}/source/common)
-add_library(common_lib ${NETWATCHDOG_COMMON_SRC_DIR}/utils.h ${NETWATCHDOG_COMMON_SRC_DIR}/utils.cpp)
+add_library(common_lib ${NETWATCHDOG_COMMON_SRC_DIR}/utils.h ${NETWATCHDOG_COMMON_SRC_DIR}/utils.cpp ${NETWATCHDOG_COMMON_SRC_DIR}/messages.h ${NETWATCHDOG_COMMON_SRC_DIR}/messages.cpp ${NETWATCHDOG_COMMON_SRC_DIR}/communication.h)
 
 # Client executable
 set(NETWATCHDOGC_SRC_DIR ${CMAKE_SOURCE_DIR}/source/client)

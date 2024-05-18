@@ -55,8 +55,8 @@ void NetWatchdogServer::Run()
         if (m_ServerSocket.recv(message))
         {
             HandleClientConnected();
-            std::string str(static_cast<char*>(message.data()), message.size());
-            std::cout << "Recv: " << str << std::endl;
+
+            m_ServerSocket.send(zmq::buffer(m_Identity), zmq::send_flags::none);
         }
     };
 

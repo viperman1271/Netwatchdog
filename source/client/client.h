@@ -20,6 +20,7 @@ public:
     ~NetWatchdogClient() = default;
 
     void Run();
+    void Kill();
 
     NetWatchdogClient(const NetWatchdogServer&) = delete;
     NetWatchdogClient(NetWatchdogServer&&) = delete;
@@ -28,6 +29,8 @@ private:
     const int m_Port;
     const std::string m_Host;
     const std::string m_Identity;
+
+    std::atomic<bool> m_ShouldContinue;
 
     zmq::socket_t m_Socket;
     std::thread m_Thread;

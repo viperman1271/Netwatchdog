@@ -55,7 +55,10 @@ void NetWatchdogServer::Run()
         if (msg != nullptr)
         {
             HandleClientConnected(msg->GetId());
-            m_ConnectedClients.push_back(msg->GetId());
+            {
+                std::lock_guard<std::mutex> lock(m_ClientsLock);
+                m_ConnectedClients.push_back(msg->GetId());
+            }
 
             GenericMessage respMessage;
             respMessage.SetId(m_Identity);
@@ -100,16 +103,33 @@ void NetWatchdogServer::HandleClientDisconnected(const zmq_event_t& zmqEvent, co
     HeartbeatMessage heartbeatMessage;
     Communication::SendMessage(heartbeatMessage, m_ServerSocket, zmq::send_flags::dontwait);
 
-    std::vector<std::string> prevConnectedClients = std::move(m_ConnectedClients);
+    std::vector<std::string> prevConnectedClients; 
+    {
+        std::lock_guard<std::mutex> lock(m_ClientsLock);
+        prevConnectedClients = std::move(m_ConnectedClients);
+    }
     m_ConnectedClients = {};
 
     const std::chrono::high_resolution_clock::time_point start = std::chrono::high_resolution_clock::now();
-    while (m_ConnectedClients.size() < (prevConnectedClients.size() - 1) && (std::chrono::high_resolution_clock::now() - start) < 10s)
+    size_t numConnectedClients = 0;
+    {
+        std::lock_guard<std::mutex> lock(m_ClientsLock);
+        numConnectedClients = m_ConnectedClients.size();
+    }
+    while (numConnectedClients < (prevConnectedClients.size() - 1) && (std::chrono::high_resolution_clock::now() - start) < 10s)
     {
         std::this_thread::sleep_for(1s);
+        {
+            std::lock_guard<std::mutex> lock(m_ClientsLock);
+            numConnectedClients = m_ConnectedClients.size();
+        }
     }
 
-    std::unordered_set<std::string> currConnectedClients(m_ConnectedClients.begin(), m_ConnectedClients.end());
+    std::unordered_set<std::string> currConnectedClients;
+    {
+        std::lock_guard<std::mutex> lock(m_ClientsLock);
+        currConnectedClients = { m_ConnectedClients.begin(), m_ConnectedClients.end() };
+    }
 
     prevConnectedClients.erase(
         std::remove_if(

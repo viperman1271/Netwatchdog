@@ -7,19 +7,25 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 # Include cppzmq submodule
 set(CPPZMQ_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/extern/cppzmq)
-
 if (NOT EXISTS ${CPPZMQ_INCLUDE_DIR}/zmq.hpp)
     message(FATAL_ERROR "cppzmq not found at ${CPPZMQ_INCLUDE_DIR}")
 endif()
 
 set(TOML11_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/extern/toml11)
-
 if (NOT EXISTS ${TOML11_INCLUDE_DIR}/toml.hpp)
     message(FATAL_ERROR "toml11 not found at ${TOML11_INCLUDE_DIR}")
 endif()
 
+set(CLI11_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/extern/cli11/include)
+if (NOT EXISTS ${CLI11_INCLUDE_DIR}/CLI/CLI.hpp)
+    message(FATAL_ERROR "cli11 not found at ${CLI11_INCLUDE_DIR}")
+endif()
+
+add_subdirectory(extern/cli11)
+
 include_directories(${CPPZMQ_INCLUDE_DIR})
 include_directories(${TOML11_INCLUDE_DIR})
+include_directories(${CLI11_INCLUDE_DIR})
 include_directories(${CMAKE_SOURCE_DIR}/source/lib)
 include_directories(${CMAKE_SOURCE_DIR}/source/client)
 include_directories(${CMAKE_SOURCE_DIR}/source/server)

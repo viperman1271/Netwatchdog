@@ -2,6 +2,7 @@
 
 #include "utils.h"
 
+#include <CLI/CLI.hpp>
 #include <toml.hpp>
 #include <stduuid/uuid.h>
 

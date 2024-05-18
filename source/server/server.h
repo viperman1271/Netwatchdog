@@ -13,6 +13,7 @@ public:
     ~NetWatchdogServer() = default;
 
     void Run();
+    void Kill();
 
     NetWatchdogServer(const NetWatchdogServer&) = delete;
     NetWatchdogServer(NetWatchdogServer&&) = delete;
@@ -37,5 +38,5 @@ private:
     std::thread m_PendingWorkThread;
     std::thread m_MonitorThread;
 
-    ConnectionMonitor m_ConnectionMonitor;
+    std::unique_ptr<ConnectionMonitor> m_ConnectionMonitor;
 };

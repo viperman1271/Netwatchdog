@@ -13,3 +13,6 @@
 [submodule "extern/cli11"]
 	path = extern/cli11
 	url = git@github.com:CLIUtils/CLI11.git
+[submodule "extern/mongo-cxx-driver"]
+	path = extern/mongo-cxx-driver
+	url = git@github.com:mongodb/mongo-cxx-driver.git

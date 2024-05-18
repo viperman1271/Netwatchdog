@@ -1,7 +1,7 @@
 # Netwatchdog
 ![Logo](./Icon_256.png)
 
-[![License: MIT][license-badge]](./LICENSE) [![DOI][doi-badge]][doi-link]
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)
 
 ## Table of Contents
   - [Table of Contents](#table-of-contents)

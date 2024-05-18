@@ -36,28 +36,14 @@ namespace Utils
         return path;
     }
 
-    std::filesystem::path& GetLocalConfigPath()
+    std::filesystem::path& GetConfigPath()
     {
         static bool isInit = false;
         static std::filesystem::path path;
         if (!isInit)
         {
             path = GetBasePath();
-            path /= "netwatchdogc.toml";
-            isInit = true;
-        }
-
-        return path;
-    }
-
-    std::filesystem::path& GetServerConfigPath()
-    {
-        static bool isInit = false;
-        static std::filesystem::path path;
-        if (!isInit)
-        {
-            path = GetBasePath();
-            path /= "netwatchdogd.toml";
+            path /= "config.toml";
             isInit = true;
         }
 

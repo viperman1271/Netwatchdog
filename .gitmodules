@@ -19,3 +19,6 @@
 [submodule "extern/mongo-c-driver"]
 	path = extern/mongo-c-driver
 	url = https://github.com/mongodb/mongo-c-driver.git
+[submodule "extern/libzmq"]
+	path = extern/libzmq
+	url = https://github.com/zeromq/libzmq.git

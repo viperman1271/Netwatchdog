@@ -31,7 +31,7 @@ endif()
 
 #include_directories(${CPPZMQ_INCLUDE_DIR})
 #include_directories(${TOML11_INCLUDE_DIR})
-#include_directories(${CLI11_INCLUDE_DIR})
+include_directories(${CLI11_INCLUDE_DIR})
 include_directories(${CMAKE_SOURCE_DIR}/source/lib)
 include_directories(${CMAKE_SOURCE_DIR}/source/client)
 include_directories(${CMAKE_SOURCE_DIR}/source/server)
@@ -43,6 +43,8 @@ foreach(configuration_type IN ITEMS Debug Release)
         set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_${configuration_type} ${CMAKE_BINARY_DIR}/bin/${configuration_type}/${architecture})
     endforeach()
 endforeach()
+
+set(BOOST_ROOT ${CMAKE_SOURCE_DIR}/extern/boost)
 
 add_subdirectory(extern/boost)
 add_subdirectory(extern/cereal)

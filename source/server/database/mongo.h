@@ -1,5 +1,6 @@
 #pragma once
 
+#include "objectmodel.h"
 #include "options.h"
 
 #include <mongocxx/client.hpp>
@@ -15,7 +16,7 @@ public:
 
     mongocxx::client& GetClient() { return m_Client; }
 
-    void AddConnectionInfo();
+    void AddConnectionInfo(ConnectionInfo& connInfo);
 
     void Test();
 

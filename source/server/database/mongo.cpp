@@ -53,6 +53,18 @@ bool Mongo::IsConnected() const
     return false;
 }
 
+void Mongo::AddConnectionInfo(ConnectionInfo& connInfo)
+{
+    mongocxx::database db = m_Client["netwatchdog-stats"]; // Replace with your database name
+    mongocxx::collection coll = db["conn-info"]; // Replace with your collection name
+
+    bsoncxx::builder::stream::document document{};
+    connInfo.serialize(document);
+
+    bsoncxx::document::value doc_value = document << bsoncxx::builder::stream::finalize;
+    coll.insert_one(doc_value.view());
+}
+
 void Mongo::Test()
 {
     //3 DB
@@ -61,10 +73,10 @@ void Mongo::Test()
     //API Keys
 
     // Access a specific database
-    mongocxx::database db = m_Client["testdb"]; // Replace with your database name
+    mongocxx::database db = m_Client["netwatchdog-meta"]; // Replace with your database name
 
     // Access a specific collection
-    mongocxx::collection coll = db["testcollection"]; // Replace with your collection name
+    mongocxx::collection coll = db["conn-info"]; // Replace with your collection name
 
     // Insert a document into the collection
     bsoncxx::builder::stream::document document{};

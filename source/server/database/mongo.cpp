@@ -38,7 +38,6 @@ bool Mongo::IsConnected() const
 
         bsoncxx::document::value result = admin_db.run_command(ping_cmd.view());
 
-        // Check the result of the ping command
         if (result.view()["ok"].get_double() == 1.0)
         {
             return true;
@@ -47,7 +46,6 @@ bool Mongo::IsConnected() const
     catch (const mongocxx::exception& e)
     {
         std::cerr << e.what();
-        // Connection failed or ping command failed
     }
 
     return false;
@@ -55,8 +53,11 @@ bool Mongo::IsConnected() const
 
 void Mongo::AddConnectionInfo(ConnectionInfo& connInfo)
 {
-    mongocxx::database db = m_Client["netwatchdog-stats"]; // Replace with your database name
-    mongocxx::collection coll = db["conn-info"]; // Replace with your collection name
+    const std::string databaseStr = std::move(GetDatabaseName(Database::Stats));
+    const std::string collectionStr = std::move(GetCollectionName(Collection::ConnectionInfo));
+
+    mongocxx::database db = m_Client["netwatchdog-stats"];
+    mongocxx::collection coll = db["conn-info"];
 
     bsoncxx::builder::stream::document document{};
     connInfo.serialize(document);
@@ -65,43 +66,95 @@ void Mongo::AddConnectionInfo(ConnectionInfo& connInfo)
     coll.insert_one(doc_value.view());
 }
 
-void Mongo::Test()
+void Mongo::DumpInfo(Database database, Collection collection)
 {
-    //3 DB
-    //Users
-    //ConnInfo
-    //API Keys
+    const std::string databaseStr = std::move(GetDatabaseName(database));
+    if (!DatabaseExists(databaseStr))
+    {
+        std::cout << "Database " << databaseStr << " does not exist." << std::endl;
+        return;
+    }
 
-    // Access a specific database
-    mongocxx::database db = m_Client["netwatchdog-meta"]; // Replace with your database name
+    const std::string collectionStr = std::move(GetCollectionName(collection));
+    if (!CollectionExists(collectionStr))
+    {
+        std::cout << "Collection " << collectionStr << " does not exist in " << databaseStr << "." << std::endl;
+        return;
+    }
 
-    // Access a specific collection
-    mongocxx::collection coll = db["conn-info"]; // Replace with your collection name
+    mongocxx::database db = m_Client[databaseStr.c_str()];
+    mongocxx::collection coll = db[collectionStr.c_str()];
 
-    // Insert a document into the collection
-    bsoncxx::builder::stream::document document{};
-    document << "name" << "John Doe"
-        << "age" << 30
-        << "occupation" << "Software Engineer";
-
-    bsoncxx::document::value doc_value = document << bsoncxx::builder::stream::finalize;
-    //coll.insert_one(doc_value.view());
-
-    std::string docStr = Utils::BSON::ToJSON(doc_value.view());
-
-    // Find and print a document from the collection
     mongocxx::cursor cursor = coll.find({});
     for (bsoncxx::document::view view : cursor)
     {
-        bsoncxx::oid oid = view["_id"].get_oid().value;
-        std::string oidStr = Utils::BSON::OIDToStr(oid);
-        std::cout << "Extracted _id: " << oidStr << std::endl;
-
         std::cout << Utils::BSON::ToJSON(view) << std::endl;
     }
+}
 
-    // Delete multiple documents from the collection
-//     bsoncxx::builder::stream::document delete_many_filter{};
-//     delete_many_filter << "age" << bsoncxx::builder::stream::open_document << "$gte" << 30 << bsoncxx::builder::stream::close_document;
-//     coll.delete_many(delete_many_filter.view());
+std::string Mongo::GetDatabaseName(Database database)
+{
+    switch (database)
+    {
+    case Database::Meta:
+        return "netwatchdog-meta";
+
+    case Database::Stats:
+        return "netwatchdog-stats";
+    };
+
+    return {};
+}
+
+std::string Mongo::GetCollectionName(Collection collection)
+{
+    switch (collection)
+    {
+    case Collection::ConnectionInfo:
+        return "conn-info";
+    };
+
+    return {};
+}
+
+bool Mongo::DatabaseExists(const std::string& databaseName) const
+{
+    try 
+    {
+        mongocxx::cursor databases = m_Client.list_databases();
+        for (bsoncxx::document::view db : databases)
+        {
+            std::string name(db["name"].get_string());
+            if (name == databaseName)
+            {
+                return true;
+            }
+        }
+    }
+    catch (const mongocxx::exception& e) 
+    {
+        std::cerr << "Error listing databases: " << e.what() << std::endl;
+    }
+    return false;
+}
+
+bool Mongo::CollectionExists(mongocxx::database& database, const std::string& collectionName) const
+{
+    try 
+    {
+        mongocxx::cursor collections = database.list_collections();
+        for (bsoncxx::document::view coll : collections)
+        {
+            std::string name(coll["name"].get_string());
+            if (name == collectionName)
+            {
+                return true;
+            }
+        }
+    }
+    catch (const mongocxx::exception& e) 
+    {
+        std::cerr << "Error listing collections: " << e.what() << std::endl;
+    }
+    return false;
 }

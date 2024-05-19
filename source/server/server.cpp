@@ -8,13 +8,13 @@
 
 using namespace std::chrono_literals;
 
-NetWatchdogServer::NetWatchdogServer(const std::string& listenAddress, const std::string& identity, int port)
-    : m_Port(port)
-    , m_ListenAddress(listenAddress)
-    , m_Identity(identity)
+NetWatchdogServer::NetWatchdogServer(const Options& options)
+    : m_Port(options.port)
+    , m_ListenAddress(options.host)
+    , m_Identity(options.identity)
     , m_ShouldContinue(true)
+    , m_Database(options)
 {
-
 }
 
 void NetWatchdogServer::Run()
@@ -96,26 +96,41 @@ void NetWatchdogServer::Monitor()
 
 void NetWatchdogServer::HandleClientConnected(const std::string& identity)
 {
-    std::cout << "Connected: " << identity << std::endl;
+    std::vector<std::string>::const_iterator iter = std::find_if(
+        m_PrevConnectedClients.begin(),
+        m_PrevConnectedClients.end(),
+        [&identity](const std::string& item) { return item == identity; });
+
+    if (iter == m_PrevConnectedClients.end())
+    {
+        ConnectionInfo connInfo;
+
+        std::cout << "Connected: " << identity << std::endl;
+
+        connInfo.m_UniqueId = identity;
+        connInfo.m_Connection = ConnectionInfo::Type::Connection;
+        m_Database.AddConnectionInfo(connInfo);
+    }
 }
 
 void NetWatchdogServer::HandleClientDisconnected(const zmq_event_t& zmqEvent, const char* addr)
 {
-    std::vector<std::string> prevConnectedClients; 
+    ConnectionInfo connInfo;
+
     {
         std::lock_guard<std::mutex> lock(m_ClientsLock);
-        prevConnectedClients = std::move(m_ConnectedClients);
+        m_PrevConnectedClients = std::move(m_ConnectedClients);
         m_ConnectedClients = {};
     }
 
     HeartbeatMessage heartbeatMessage;
-    for (const std::string& prevConnectedClient : prevConnectedClients)
+    for (const std::string& prevConnectedClient : m_PrevConnectedClients)
     {
         Communication::SendMessage(heartbeatMessage, m_ServerSocket, prevConnectedClient, zmq::send_flags::dontwait);
     }
 
     const std::chrono::high_resolution_clock::time_point start = std::chrono::high_resolution_clock::now();
-    while (m_ConnectedClients.size() < (prevConnectedClients.size() - 1) && (std::chrono::high_resolution_clock::now() - start) < 10s)
+    while (m_ConnectedClients.size() < (m_PrevConnectedClients.size() - 1) && (std::chrono::high_resolution_clock::now() - start) < 10s)
     {
         std::this_thread::sleep_for(1s);
     }
@@ -126,17 +141,23 @@ void NetWatchdogServer::HandleClientDisconnected(const zmq_event_t& zmqEvent, co
         currConnectedClients = { m_ConnectedClients.begin(), m_ConnectedClients.end() };
     }
 
-    prevConnectedClients.erase(
+    m_PrevConnectedClients.erase(
         std::remove_if(
-            prevConnectedClients.begin(),
-            prevConnectedClients.end(),
+            m_PrevConnectedClients.begin(),
+            m_PrevConnectedClients.end(),
             [&currConnectedClients](const std::string& item) { return currConnectedClients.find(item) != currConnectedClients.end(); }
         ),
-        prevConnectedClients.end()
+        m_PrevConnectedClients.end()
     );
 
-    for (const std::string& disconnectedClient : prevConnectedClients)
+    for (const std::string& disconnectedClient : m_PrevConnectedClients)
     {
+        connInfo.m_UniqueId = disconnectedClient;
+        connInfo.m_Connection = ConnectionInfo::Type::Disconnection;
+        m_Database.AddConnectionInfo(connInfo);
+
         std::cout << "Disconnected: " << disconnectedClient << std::endl;
     }
+
+    m_PrevConnectedClients.clear();
 }

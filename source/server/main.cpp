@@ -4,6 +4,7 @@
 #include "options.h"
 #include "utils.h"
 
+#include <chrono>
 #include <csignal>
 #include <iostream>
 
@@ -31,7 +32,7 @@ int main(int argc, char** argv)
         return -1;
     }
 
-    NetWatchdogServer server(options.host, options.identity, options.port);
+    NetWatchdogServer server(options);
 
     g_CallbackFunc = [&server]()
     {

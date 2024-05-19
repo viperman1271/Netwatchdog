@@ -7,7 +7,6 @@
 
 namespace Utils
 {
-
     std::filesystem::path& GetBasePath()
     {
 #ifdef _WIN32

@@ -15,4 +15,14 @@ struct Options
     std::string host = "*";
 #endif // NETWATCHDOG_CLIENT / NETWATCHDOG_SERVER
     std::string identity;
+
+#ifdef NETWATCHDOG_SERVER
+    struct
+    {
+        std::string username;
+        std::string password;
+        std::string host;
+        int port;
+    } database;
+#endif // NETWATCHDOG_SERVER
 };

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "database/mongo.h"
 #include "monitor.h"
 
 #include <zmq.hpp>
@@ -10,7 +11,7 @@
 class NetWatchdogServer final
 {
 public:
-    NetWatchdogServer(const std::string& listenAddress, const std::string& identity, int port = 32000);
+    NetWatchdogServer(const Options& options);
     ~NetWatchdogServer() = default;
 
     void Run();
@@ -40,5 +41,8 @@ private:
 
     std::mutex m_ClientsLock;
     std::vector<std::string> m_ConnectedClients;
+    std::vector<std::string> m_PrevConnectedClients;
     std::unique_ptr<ConnectionMonitor> m_ConnectionMonitor;
+
+    Mongo m_Database;
 };

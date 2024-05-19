@@ -5,25 +5,33 @@ project(NetWatchdog)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
-# Include cppzmq submodule
-set(CPPZMQ_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/extern/cppzmq)
-if (NOT EXISTS ${CPPZMQ_INCLUDE_DIR}/zmq.hpp)
-    message(FATAL_ERROR "cppzmq not found at ${CPPZMQ_INCLUDE_DIR}")
-endif()
-
-set(TOML11_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/extern/toml11)
-if (NOT EXISTS ${TOML11_INCLUDE_DIR}/toml.hpp)
-    message(FATAL_ERROR "toml11 not found at ${TOML11_INCLUDE_DIR}")
-endif()
-
+# cli11
 set(CLI11_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/extern/cli11/include)
 if (NOT EXISTS ${CLI11_INCLUDE_DIR}/CLI/CLI.hpp)
     message(FATAL_ERROR "cli11 not found at ${CLI11_INCLUDE_DIR}")
 endif()
 
-include_directories(${CPPZMQ_INCLUDE_DIR})
-include_directories(${TOML11_INCLUDE_DIR})
-include_directories(${CLI11_INCLUDE_DIR})
+# cppzmq
+set(CPPZMQ_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/extern/cppzmq)
+if (NOT EXISTS ${CPPZMQ_INCLUDE_DIR}/zmq.hpp)
+    message(FATAL_ERROR "cppzmq not found at ${CPPZMQ_INCLUDE_DIR}")
+endif()
+
+# libzmq
+set(LIBZMQ_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/extern/libzmq/include)
+if (NOT EXISTS ${LIBZMQ_INCLUDE_DIR}/zmq.h)
+    message(FATAL_ERROR "libzmq not found at ${LIBZMQ_INCLUDE_DIR}")
+endif()
+
+# toml11
+set(TOML11_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/extern/toml11)
+if (NOT EXISTS ${TOML11_INCLUDE_DIR}/toml.hpp)
+    message(FATAL_ERROR "toml11 not found at ${TOML11_INCLUDE_DIR}")
+endif()
+
+#include_directories(${CPPZMQ_INCLUDE_DIR})
+#include_directories(${TOML11_INCLUDE_DIR})
+#include_directories(${CLI11_INCLUDE_DIR})
 include_directories(${CMAKE_SOURCE_DIR}/source/lib)
 include_directories(${CMAKE_SOURCE_DIR}/source/client)
 include_directories(${CMAKE_SOURCE_DIR}/source/server)
@@ -36,8 +44,43 @@ foreach(configuration_type IN ITEMS Debug Release)
     endforeach()
 endforeach()
 
+add_subdirectory(extern/cereal)
+add_subdirectory(extern/cli11)
+#add_subdirectory(extern/cppzmq)
+add_subdirectory(extern/libzmq)
 add_subdirectory(extern/mongo-c-driver)
 add_subdirectory(extern/mongo-cxx-driver)
+add_subdirectory(extern/stduuid)
+add_subdirectory(extern/toml11)
+
+# cereal
+set_target_properties(performance PROPERTIES FOLDER "extern/cereal")
+set_target_properties(sandbox PROPERTIES FOLDER "extern/cereal")
+set_target_properties(sandbox_json PROPERTIES FOLDER "extern/cereal")
+set_target_properties(sandbox_rtti PROPERTIES FOLDER "extern/cereal")
+set_target_properties(sandbox_vs PROPERTIES FOLDER "extern/cereal")
+set_target_properties(sandbox_vs_dll PROPERTIES FOLDER "extern/cereal")
+
+# CLI11
+set_target_properties(CLI11 PROPERTIES FOLDER "extern/CLI11")
+
+# libzmq
+set_target_properties(benchmark_radix_tree PROPERTIES FOLDER "extern/libzmq")
+set_target_properties(clang-format PROPERTIES FOLDER "extern/libzmq")
+set_target_properties(clang-format-check PROPERTIES FOLDER "extern/libzmq")
+set_target_properties(clang-format-diff PROPERTIES FOLDER "extern/libzmq")
+set_target_properties(inproc_lat PROPERTIES FOLDER "extern/libzmq")
+set_target_properties(inproc_thr PROPERTIES FOLDER "extern/libzmq")
+set_target_properties(libzmq PROPERTIES FOLDER "extern/libzmq")
+set_target_properties(libzmq-static PROPERTIES FOLDER "extern/libzmq")
+set_target_properties(local_lat PROPERTIES FOLDER "extern/libzmq")
+set_target_properties(local_thr PROPERTIES FOLDER "extern/libzmq")
+set_target_properties(proxy_thr PROPERTIES FOLDER "extern/libzmq")
+set_target_properties(remote_lat PROPERTIES FOLDER "extern/libzmq")
+set_target_properties(remote_thr PROPERTIES FOLDER "extern/libzmq")
+set_target_properties(remote_thr PROPERTIES FOLDER "extern/libzmq")
+set_target_properties(remote_thr PROPERTIES FOLDER "extern/libzmq")
+set_target_properties(remote_thr PROPERTIES FOLDER "extern/libzmq")
 
 # mongo-c
 set_target_properties(aggregation1 PROPERTIES FOLDER "extern/mongo-c")
@@ -139,7 +182,7 @@ include_directories(${NETWATCHDOGD_SRC_DIR} ${NETWATCHDOG_COMMON_SRC_DIR})
 file(GLOB NETWATCHDOGD_SOURCES ${NETWATCHDOGD_SRC_DIR}/*.*)
 file(GLOB NETWATCHDOGD_DATABASE_SOURCES ${NETWATCHDOGD_SRC_DIR}/database/*.*)
 add_executable(netwatchdogd ${NETWATCHDOGD_SOURCES} ${NETWATCHDOGD_DATABASE_SOURCES} ${LIBNETWATCHDOG_SOURCES})
-target_link_libraries(netwatchdogd ${ZeroMQ_LIBRARIES} bson_static mongoc_static bsoncxx_shared mongocxx_shared)
+target_link_libraries(netwatchdogd cli11 libzmq-static bson_static mongoc_static bsoncxx_shared mongocxx_shared toml11)
 target_compile_definitions(netwatchdogd PRIVATE NETWATCHDOG_SERVER)
 
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)

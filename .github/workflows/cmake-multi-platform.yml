@@ -59,9 +59,6 @@ jobs:
       run: |
         git submodule update --init --recursive
 
-    - name: Install vcpkg (run-vcpkg)
-      uses: lukka/run-vcpkg@v11
-
     - name: Install vcpkg
       run: |
         git clone https://github.com/microsoft/vcpkg.git

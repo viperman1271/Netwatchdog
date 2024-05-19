@@ -56,8 +56,8 @@ void Mongo::AddConnectionInfo(ConnectionInfo& connInfo)
     const std::string databaseStr = std::move(GetDatabaseName(Database::Stats));
     const std::string collectionStr = std::move(GetCollectionName(Collection::ConnectionInfo));
 
-    mongocxx::database db = m_Client["netwatchdog-stats"];
-    mongocxx::collection coll = db["conn-info"];
+    mongocxx::database db = m_Client[databaseStr.c_str()];
+    mongocxx::collection coll = db[collectionStr.c_str()];
 
     bsoncxx::builder::stream::document document{};
     connInfo.serialize(document);
@@ -75,14 +75,15 @@ void Mongo::DumpInfo(Database database, Collection collection)
         return;
     }
 
+    mongocxx::database db = m_Client[databaseStr.c_str()];
+
     const std::string collectionStr = std::move(GetCollectionName(collection));
-    if (!CollectionExists(collectionStr))
+    if (!CollectionExists(db, collectionStr))
     {
         std::cout << "Collection " << collectionStr << " does not exist in " << databaseStr << "." << std::endl;
         return;
     }
 
-    mongocxx::database db = m_Client[databaseStr.c_str()];
     mongocxx::collection coll = db[collectionStr.c_str()];
 
     mongocxx::cursor cursor = coll.find({});

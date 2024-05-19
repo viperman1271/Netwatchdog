@@ -20,7 +20,7 @@ Netwatchdog is a simple application that is used to monitor network connection d
 
 ## Build
 
-Netwatchdog uses CMake to generate necessary configuration files
+Netwatchdog uses CMake to generate necessary configuration files. As a prerequisite, python must be available on the system first.
 
 ```
 mkdir build

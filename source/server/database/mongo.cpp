@@ -1,5 +1,7 @@
 #include "database/mongo.h"
 
+#include "bson_utils.h"
+
 #include <mongocxx/exception/exception.hpp>
 #include <bsoncxx/builder/stream/document.hpp>
 
@@ -49,4 +51,45 @@ bool Mongo::IsConnected() const
     }
 
     return false;
+}
+
+void Mongo::Test()
+{
+    //3 DB
+    //Users
+    //ConnInfo
+    //API Keys
+
+    // Access a specific database
+    mongocxx::database db = m_Client["testdb"]; // Replace with your database name
+
+    // Access a specific collection
+    mongocxx::collection coll = db["testcollection"]; // Replace with your collection name
+
+    // Insert a document into the collection
+    bsoncxx::builder::stream::document document{};
+    document << "name" << "John Doe"
+        << "age" << 30
+        << "occupation" << "Software Engineer";
+
+    bsoncxx::document::value doc_value = document << bsoncxx::builder::stream::finalize;
+    //coll.insert_one(doc_value.view());
+
+    std::string docStr = Utils::BSON::ToJSON(doc_value.view());
+
+    // Find and print a document from the collection
+    mongocxx::cursor cursor = coll.find({});
+    for (bsoncxx::document::view view : cursor)
+    {
+        bsoncxx::oid oid = view["_id"].get_oid().value;
+        std::string oidStr = Utils::BSON::OIDToStr(oid);
+        std::cout << "Extracted _id: " << oidStr << std::endl;
+
+        std::cout << Utils::BSON::ToJSON(view) << std::endl;
+    }
+
+    // Delete multiple documents from the collection
+//     bsoncxx::builder::stream::document delete_many_filter{};
+//     delete_many_filter << "age" << bsoncxx::builder::stream::open_document << "$gte" << 30 << bsoncxx::builder::stream::close_document;
+//     coll.delete_many(delete_many_filter.view());
 }

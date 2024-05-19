@@ -1,6 +1,7 @@
 #include "server.h"
 
 #include "config.h"
+#include "database/mongo.h"
 #include "options.h"
 #include "utils.h"
 
@@ -22,6 +23,17 @@ void handle_signal(int signal)
     }
 }
 
+void mongo(const Options& options)
+{
+    Mongo mongoDb(options);
+    if (!mongoDb.IsConnected())
+    {
+        return;
+    }
+
+    mongoDb.Test();
+}
+
 int main(int argc, char** argv)
 {
     Options options;
@@ -30,6 +42,8 @@ int main(int argc, char** argv)
     {
         return -1;
     }
+
+    mongo(options);
 
     NetWatchdogServer server(options.host, options.identity, options.port);
 

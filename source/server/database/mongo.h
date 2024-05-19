@@ -17,6 +17,8 @@ public:
 
     void AddConnectionInfo();
 
+    void Test();
+
 private:
     static mongocxx::instance ms_Instance;
 

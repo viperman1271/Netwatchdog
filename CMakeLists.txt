@@ -45,6 +45,7 @@ foreach(configuration_type IN ITEMS Debug Release)
 endforeach()
 
 set(BOOST_ROOT ${CMAKE_SOURCE_DIR}/extern/boost)
+set(Boost_INCLUDE_DIR ${BOOST_ROOT})
 
 add_subdirectory(extern/boost)
 add_subdirectory(extern/cereal)

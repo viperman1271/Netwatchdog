@@ -96,7 +96,7 @@ set_target_properties(boost_variant2 PROPERTIES FOLDER "extern/boost")
 set_target_properties(boost_wave PROPERTIES FOLDER "extern/boost")
 set_target_properties(boost_wserialization PROPERTIES FOLDER "extern/boost")
 
-#find_package(Boost REQUIRED COMPONENTS array serialization)
+find_package(Boost REQUIRED COMPONENTS serialization)
 include_directories(${Boost_INCLUDE_DIRS})
 
 # cereal

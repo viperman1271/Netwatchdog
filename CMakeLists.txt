@@ -46,15 +46,30 @@ add_executable(netwatchdogc ${NETWATCHDOGC_SRC_DIR}/main.cpp ${NETWATCHDOGC_SRC_
 target_link_libraries(netwatchdogc)
 target_compile_definitions(netwatchdogc PRIVATE NETWATCHDOG_CLIENT)
 
-#add_subdirectory(extern/mongo-c-driver)
-#add_subdirectory(extern/mongo-cxx-driver)
+add_subdirectory(extern/mongo-c-driver)
+add_subdirectory(extern/mongo-cxx-driver)
+#add_subdirectory(extern/mongo-cxx-driver/src/bsoncxx)
+
+# Find the mongocxx and bsoncxx packages
+#find_package(mongocxx-static REQUIRED)
+#find_package(bsoncxx-static REQUIRED)
+#find_package(bson_static REQUIRED)
+#find_package(bson)
+#find_package(mongocxx CONFIG REQUIRED)
 
 # Server executable
 set(NETWATCHDOGD_SRC_DIR ${CMAKE_SOURCE_DIR}/source/server)
-include_directories(${NETWATCHDOGD_SRC_DIR} ${NETWATCHDOG_COMMON_SRC_DIR})
-add_executable(netwatchdogd ${NETWATCHDOGD_SRC_DIR}/main.cpp ${NETWATCHDOGD_SRC_DIR}/server.h ${NETWATCHDOGD_SRC_DIR}/server.cpp ${NETWATCHDOGD_SRC_DIR}/monitor.h ${NETWATCHDOGD_SRC_DIR}/monitor.cpp ${LIBNETWATCHDOG_SOURCES})
-target_link_libraries(netwatchdogd ${ZeroMQ_LIBRARIES})
+set(MONGOCXX_BUILD_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/build/extern/mongo-cxx-driver/src/mongocxx/lib/mongocxx/v_noabi)
+set(MONGOCXX_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/extern/mongo-cxx-driver/src/mongocxx/include/mongocxx/v_noabi)
+set(BSONCXX_BUILD_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/build/extern/mongo-cxx-driver/src/bsoncxx/lib/bsoncxx/v_noabi)
+set(BSONCXX_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/extern/mongo-cxx-driver/src/bsoncxx/include/bsoncxx/v_noabi)
+
+include_directories(${NETWATCHDOGD_SRC_DIR} ${NETWATCHDOG_COMMON_SRC_DIR} ${MONGOCXX_STATIC_INCLUDE_DIRS} ${BSONCXX_STATIC_INCLUDE_DIRS} ${MONGOCXX_BUILD_INCLUDE_DIR} ${MONGOCXX_INCLUDE_DIR} ${BSONCXX_BUILD_INCLUDE_DIR} ${BSONCXX_INCLUDE_DIR})
+file(GLOB NETWATCHDOGD_SOURCES ${NETWATCHDOGD_SRC_DIR}/*.*)
+file(GLOB NETWATCHDOGD_DATABASE_SOURCES ${NETWATCHDOGD_SRC_DIR}/database/*.*)
+add_executable(netwatchdogd ${NETWATCHDOGD_SOURCES} ${NETWATCHDOGD_DATABASE_SOURCES} ${LIBNETWATCHDOG_SOURCES})
+target_link_libraries(netwatchdogd ${ZeroMQ_LIBRARIES} bson_static mongoc_static)
 target_compile_definitions(netwatchdogd PRIVATE NETWATCHDOG_SERVER)
 
-#message(STATUS "ZeroMQ include dir: ${ZeroMQ_INCLUDE_DIRS}")
-#message(STATUS "ZeroMQ libraries: ${ZeroMQ_LIBRARIES}")
+set_target_properties(netwatchdogc PROPERTIES FOLDER "NetWatchdog")
+set_target_properties(netwatchdogd PROPERTIES FOLDER "NetWatchdog")

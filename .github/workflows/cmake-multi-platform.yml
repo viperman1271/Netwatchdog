@@ -57,6 +57,7 @@ jobs:
     - name: Git Submodule Init
       shell: bash
       run: |
+        ssh -T git@github.com
         git submodule update --init --recursive
 
     - name: Configure CMake

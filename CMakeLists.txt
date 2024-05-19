@@ -5,30 +5,6 @@ project(NetWatchdog)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
-# cli11
-set(CLI11_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/extern/cli11/include)
-if (NOT EXISTS ${CLI11_INCLUDE_DIR}/CLI/CLI.hpp)
-    message(FATAL_ERROR "cli11 not found at ${CLI11_INCLUDE_DIR}")
-endif()
-
-# cppzmq
-set(CPPZMQ_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/extern/cppzmq)
-if (NOT EXISTS ${CPPZMQ_INCLUDE_DIR}/zmq.hpp)
-    message(FATAL_ERROR "cppzmq not found at ${CPPZMQ_INCLUDE_DIR}")
-endif()
-
-# libzmq
-set(LIBZMQ_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/extern/libzmq/include)
-if (NOT EXISTS ${LIBZMQ_INCLUDE_DIR}/zmq.h)
-    message(FATAL_ERROR "libzmq not found at ${LIBZMQ_INCLUDE_DIR}")
-endif()
-
-# toml11
-set(TOML11_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/extern/toml11)
-if (NOT EXISTS ${TOML11_INCLUDE_DIR}/toml.hpp)
-    message(FATAL_ERROR "toml11 not found at ${TOML11_INCLUDE_DIR}")
-endif()
-
 #include_directories(${CPPZMQ_INCLUDE_DIR})
 #include_directories(${TOML11_INCLUDE_DIR})
 include_directories(${CLI11_INCLUDE_DIR})

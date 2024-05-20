@@ -67,6 +67,15 @@ The usage of the client and the server is quite simple. Running the application 
 
 ### Server
 
+The MongoDB can be configured through 3 options - via environment variables, command line options, or values in the config.toml. Any values passed as command line, or via environment variables, will not be saved in the config.toml for security reasons.
+
+| Variable | Description |
+| -------- | ----------- |
+| MONGO_USERNAME | Username for credentials |
+| MONGO_PASSWORD | Password for credentials |
+| MONGO_HOST | Hostname of the database (defaults to localhost) |
+| MONGO_PORT | Port for the database (defaults to 27017) |
+
 ```
 NetWatchdog - ZeroMQ based network monitoring tool.
 Usage: C:\git\NetWatchdog\bin\Debug\netwatchdogd.exe [OPTIONS]

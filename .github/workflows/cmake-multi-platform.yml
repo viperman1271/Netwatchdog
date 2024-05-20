@@ -120,19 +120,19 @@ jobs:
 
       - name: Create tmp directories
         run: |
-        mkdir ${{ github.workspace }}/tmp
-        mkdir ${{ github.workspace }}/tmp/server
-        mkdir ${{ github.workspace }}/tmp/client
-        mkdir ${{ github.workspace }}/tmp/web
+          mkdir ${{ github.workspace }}/tmp
+          mkdir ${{ github.workspace }}/tmp/server
+          mkdir ${{ github.workspace }}/tmp/client
+          mkdir ${{ github.workspace }}/tmp/web
 
       - name: Copy files to correct location
         run: |
-        cp ${{ github.workspace }}/bin/netwatchdogd ${{ github.workspace }}/tmp/server/.
-        cp ${{ github.workspace }}/docker/server/* ${{ github.workspace }}/tmp/server/.
-        cp ${{ github.workspace }}/bin/netwatchdogc ${{ github.workspace }}/tmp/client/.
-        cp ${{ github.workspace }}/docker/client/* ${{ github.workspace }}/tmp/client/.
-        cp ${{ github.workspace }}/bin/web ${{ github.workspace }}/tmp/web/.
-        cp ${{ github.workspace }}/docker/web/* ${{ github.workspace }}/tmp/web/.
+          cp ${{ github.workspace }}/bin/netwatchdogd ${{ github.workspace }}/tmp/server/.
+          cp ${{ github.workspace }}/docker/server/* ${{ github.workspace }}/tmp/server/.
+          cp ${{ github.workspace }}/bin/netwatchdogc ${{ github.workspace }}/tmp/client/.
+          cp ${{ github.workspace }}/docker/client/* ${{ github.workspace }}/tmp/client/.
+          cp ${{ github.workspace }}/bin/web ${{ github.workspace }}/tmp/web/.
+          cp ${{ github.workspace }}/docker/web/* ${{ github.workspace }}/tmp/web/.
       
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2

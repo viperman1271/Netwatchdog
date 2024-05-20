@@ -43,6 +43,7 @@ int main(int argc, char** argv)
             ss << "    <link rel=\"icon\" type=\"image/png\" sizes=\"16x16\" href=\"/data/favicon-16x16.png\">" << std::endl;
             ss << "    <link rel=\"icon\" type=\"image/x-icon\" href=\"/data/favicon.ico\">" << std::endl;
             ss << "    <link rel=\"manifest\" href=\"/data/site.webmanifest\">" << std::endl;
+            ss << "    <link rel = \"stylesheet\" href=\"/data/styles.css\">" << std::endl;
             ss << "</head>" << std::endl;
             ss << "<body>" << std::endl;
             ss << "    <h1>netwatchdog: " << clientId << "</h1>" << std::endl;

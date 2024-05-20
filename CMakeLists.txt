@@ -16,6 +16,7 @@ foreach(configuration_type IN ITEMS Debug Release)
     endforeach()
 endforeach()
 
+find_package(Catch2 CONFIG REQUIRED)
 find_package(cereal CONFIG REQUIRED)
 find_package(CLI11 CONFIG REQUIRED)
 find_package(cppzmq CONFIG REQUIRED)
@@ -25,9 +26,20 @@ find_package(mongocxx CONFIG REQUIRED)
 find_package(stduuid CONFIG REQUIRED)
 find_package(toml11 CONFIG REQUIRED)
 
+# Enable testing
+enable_testing()
+include(CTest)
+include(Catch)
+
 # Common library
 set(NETWATCHDOG_COMMON_SRC_DIR ${CMAKE_SOURCE_DIR}/source/common)
 file(GLOB LIBNETWATCHDOG_SOURCES ${NETWATCHDOG_COMMON_SRC_DIR}/*.*)
+
+# Common Library Tests
+set(NETWATCHDOG_COMMON_TEST_SRC_DIR ${CMAKE_SOURCE_DIR}/source/tests/common)
+file(GLOB LIBNETWATCHDOG_TEST_SOURCES ${NETWATCHDOG_COMMON_TEST_SRC_DIR}/*.*)
+add_executable(libwatchdog_tests ${LIBNETWATCHDOG_SOURCES} ${LIBNETWATCHDOG_TEST_SOURCES})
+target_link_libraries(libwatchdog_tests PRIVATE Catch2::Catch2WithMain)
 
 # Client executable
 set(NETWATCHDOGC_SRC_DIR ${CMAKE_SOURCE_DIR}/source/client)
@@ -51,5 +63,9 @@ target_link_libraries(netwatchdogd PRIVATE cereal::cereal CLI11::CLI11 cppzmq ${
 target_compile_definitions(netwatchdogd PRIVATE NETWATCHDOG_SERVER)
 
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
-set_target_properties(netwatchdogc PROPERTIES FOLDER "NetWatchdog")
-set_target_properties(netwatchdogd PROPERTIES FOLDER "NetWatchdog")
+set_target_properties(netwatchdogc PROPERTIES FOLDER "netwatchdog")
+set_target_properties(netwatchdogd PROPERTIES FOLDER "netwatchdog")
+set_target_properties(libwatchdog_tests PROPERTIES FOLDER "netwatchdog/tests")
+
+# Add tests
+catch_discover_tests(libwatchdog_tests)

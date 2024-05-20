@@ -67,7 +67,7 @@ jobs:
     - name: Cache vcpkg
       uses: actions/cache@v2
       with:
-        path: ${{ github.workspace }}/vcpkg
+        path: ${{ github.workspace }}/build/vcpkg_installed
         key: ${{ runner.os }}-vcpkg-${{ hashFiles('vcpkg.json') }}
         restore-keys: |
           ${{ runner.os }}-vcpkg-

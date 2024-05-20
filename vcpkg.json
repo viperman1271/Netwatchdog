@@ -2,6 +2,7 @@
   "name": "netwatchdog",
   "version-string": "0.1.0",
   "dependencies": [
+    "catch2",
     "cereal",
     "cli11",
     "cppzmq",

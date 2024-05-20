@@ -7,25 +7,47 @@
 #include <stduuid/uuid.h>
 #include <toml.hpp>
 
+#ifdef _WIN32
+#include <windows.h>
+#endif
+
 #include <filesystem>
 #include <iostream>
 
 namespace Config
 {
+    bool ValueExists(toml::value& config, const std::string& category, const std::string& variable)
+    {
+        if (config.type() != toml::value_t::empty)
+        {
+            auto& tab = config.as_table();
+            if (tab.count(category) != 0)
+            {
+                auto& subtab = config[category].as_table();
+                if (subtab.count(variable) != 0)
+                {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
     void ConfigureIfEnvVarNotEmpty(toml::value& config, const std::string& category, const std::string& variable, const std::string& envVariable)
     {
 #ifdef _WIN32
         constexpr int envVarStrLen = 256;
-        char* value = reinterpret_cast<char*>(alloca(envVarStrLen * sizeof(char)));
+        char* const value = reinterpret_cast<char*>(alloca(envVarStrLen * sizeof(char)));
+        memset(value, 0, envVarStrLen);
 
-        size_t envVarSize = 0;
-        _dupenv_s(&value, &envVarSize, envVariable.c_str());
-        if (envVarSize > 0)
+        GetEnvironmentVariable(envVariable.c_str(), value, envVarStrLen);
+        if (strlen(value) > 0)
         {
             config[category][variable] = value;
         }
 #else
-        char* value = getenv(envVariable.c_str());
+        const char* const value = std::getenv(envVariable.c_str());
         if (value != nullptr && strlen(value) > 0)
         {
             config[category][variable] = value;
@@ -36,25 +58,9 @@ namespace Config
     template<typename T>
     void ConfigureDefaultValue(toml::value& config, const std::string& category, const std::string& variable, const T& defaultValue)
     {
-        if (config.type() == toml::value_t::empty)
+        if (!ValueExists(config, category, variable))
         {
             config[category][variable] = defaultValue;
-        }
-        else
-        {
-            auto& tab = config.as_table();
-            if (tab.count(category) == 0)
-            {
-                config[category][variable] = defaultValue;
-            }
-            else
-            {
-                auto& subtab = config[category].as_table();
-                if (subtab.count(variable) == 0)
-                {
-                    config[category][variable] = defaultValue;
-                }
-            }
         }
     }
 

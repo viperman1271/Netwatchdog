@@ -47,6 +47,7 @@ Makefile
 
 # Build directories
 build/
+build*/
 bin/
 lib/
 out/
@@ -54,6 +55,7 @@ Debug/
 Release/
 x64/
 x86/
+tmp/
 
 # Compiled Object files
 *.obj

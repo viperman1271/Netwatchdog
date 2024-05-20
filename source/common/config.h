@@ -34,21 +34,58 @@ namespace Config
     }
 
     template<typename T>
-    void ConfigureDefaultValue(toml::value& config, const std::string& category, const std::string& variable, const T& defaultValue) noexcept
+    void ConfigureDefaultValue(toml::value& config, const std::string& category, const std::string& variable, const T& defaultValue)
     {
-        auto& tab = config.as_table();
-        if (tab.count(category) == 0)
+        if (config.type() == toml::value_t::empty)
         {
             config[category][variable] = defaultValue;
         }
         else
         {
-            auto& subtab = config[category].as_table();
-            if (subtab.count(variable) == 0)
+            auto& tab = config.as_table();
+            if (tab.count(category) == 0)
             {
                 config[category][variable] = defaultValue;
             }
+            else
+            {
+                auto& subtab = config[category].as_table();
+                if (subtab.count(variable) == 0)
+                {
+                    config[category][variable] = defaultValue;
+                }
+            }
         }
+    }
+
+    template<typename T>
+    void GetValue(toml::value& config, const std::string& category, const std::string& variable, T& value)
+    {
+        if (config.type() != toml::value_t::empty)
+        {
+            auto& tab = config.as_table();
+            if (tab.count(category) != 0)
+            {
+                auto& subtab = config[category].as_table();
+                if (subtab.count(variable) != 0)
+                {
+                    value = toml::find<T>(config, category, variable);
+                }
+            }
+        }
+    }
+
+    bool ValidateIdentity(toml::value& config, const std::string& category, const std::string& variable)
+    {
+        std::string identity;
+        GetValue(config, category, variable, identity);
+        std::optional<uuids::uuid> uuid = uuids::uuid::from_string(identity);
+        if (uuid.has_value())
+        {
+            return true;
+        }
+
+        return false;
     }
 
     void LoadOrCreateConfig(Options& options)
@@ -63,13 +100,32 @@ namespace Config
             config = toml::parse(configPath.string());
         }
 
+        const bool validServerIdentity = ValidateIdentity(config, "server", "identity");
+        const bool validClientIdentity = ValidateIdentity(config, "client", "identity");
+        if (!validServerIdentity || !validClientIdentity)
+        {
+            if (!validServerIdentity)
+            {
+                config["server"]["identity"] = uuids::to_string(uuids::uuid_random_generator(g_RNG)());
+            }
+
+            if (!validClientIdentity)
+            {
+                config["client"]["identity"] = uuids::to_string(uuids::uuid_random_generator(g_RNG)());
+            }
+
+            std::cout << "Configuration file [" << configPath.string() << "] contained invalid identity fields... updating." << std::endl;
+
+            std::ofstream ofs(configPath.string());
+            ofs << config;
+            ofs.close();
+        }
+
         ConfigureDefaultValue(config, "server", "host", "*");
         ConfigureDefaultValue(config, "server", "port", options.port);
-        ConfigureDefaultValue(config, "server", "identity", uuids::to_string(uuids::uuid_random_generator(g_RNG)()));
 
         ConfigureDefaultValue(config, "client", "host", "localhost");
         ConfigureDefaultValue(config, "client", "port", options.port);
-        ConfigureDefaultValue(config, "client", "identity", uuids::to_string(uuids::uuid_random_generator(g_RNG)()));
 
         ConfigureDefaultValue(config, "database", "username", "root");
         ConfigureDefaultValue(config, "database", "password", "password1234");

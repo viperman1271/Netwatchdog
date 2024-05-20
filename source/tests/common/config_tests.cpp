@@ -24,6 +24,7 @@ TEST_CASE("ConfigureIfEnvVarNotEmpty")
 
     Config::ConfigureIfEnvVarNotEmpty(config, "test", "value1", "ENV_c11c0f45-aadc-4d9a-af99-f9e33b92d9bd");
 
+    // Because the environment variable doesn't exist, the value should not have been set
     CHECK_FALSE(Config::ValueExists(config, "test", "value1"));
 
     static const std::string ENV_VALUE{ "23456" };
@@ -42,11 +43,17 @@ TEST_CASE("ConfigureIfEnvVarNotEmpty")
 
     static const std::string CONFIG_VALUE { "34567" };
     config["test"]["value2"] = CONFIG_VALUE;
-    Config::ConfigureIfEnvVarNotEmpty(config, "test", "value2", "ENV_c11c0f45-aadc-4d9a-af99-f9e33b92d9bd");
 
     Config::GetValue(config, "test", "value2", value);
 
     CHECK(value == CONFIG_VALUE);
+
+    Config::ConfigureIfEnvVarNotEmpty(config, "test", "value2", "ENV_c11c0f45-aadc-4d9a-af99-f9e33b92d9bd");
+
+    Config::GetValue(config, "test", "value2", value);
+
+    //Validate that the environment variable overrides already set value
+    CHECK(value == ENV_VALUE);
 }
 
 TEST_CASE("ConfigureDefaultValue")
@@ -86,7 +93,7 @@ TEST_CASE("GetValue returns expected value")
     constexpr int TEST_VALUE = 12345;
     config["test"]["value2"] = TEST_VALUE;
 
-    Config::GetValue(config, "test", "value1", value);
+    Config::GetValue(config, "test", "value2", value);
 
     CHECK(value == TEST_VALUE);
 }

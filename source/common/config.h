@@ -7,6 +7,10 @@
 #include <stduuid/uuid.h>
 #include <toml.hpp>
 
+#ifdef _WIN32
+#include <windows.h>
+#endif
+
 #include <filesystem>
 #include <iostream>
 
@@ -34,16 +38,16 @@ namespace Config
     {
 #ifdef _WIN32
         constexpr int envVarStrLen = 256;
-        char* value = reinterpret_cast<char*>(alloca(envVarStrLen * sizeof(char)));
+        char* const value = reinterpret_cast<char*>(alloca(envVarStrLen * sizeof(char)));
+        memset(value, 0, envVarStrLen);
 
-        size_t envVarSize = 0;
-        _dupenv_s(&value, &envVarSize, envVariable.c_str());
-        if (envVarSize > 0)
+        GetEnvironmentVariable(envVariable.c_str(), value, envVarStrLen);
+        if (strlen(value) > 0)
         {
             config[category][variable] = value;
         }
 #else
-        char* value = getenv(envVariable.c_str());
+        const char* const value = std::getenv(envVariable.c_str());
         if (value != nullptr && strlen(value) > 0)
         {
             config[category][variable] = value;

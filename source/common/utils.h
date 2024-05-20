@@ -7,6 +7,7 @@
 
 namespace Utils
 {
+    std::string GetEnvVar(const char* envVariable);
     std::filesystem::path& GetBasePath();
     std::filesystem::path& GetConfigPath();
 

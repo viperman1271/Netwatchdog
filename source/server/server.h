@@ -1,6 +1,6 @@
 #pragma once
 
-#include "database/mongo.h"
+#include "mongo.h"
 #include "monitor.h"
 
 #include <zmq.hpp>

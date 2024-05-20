@@ -113,6 +113,7 @@ Netwatchdog is licensed under the [MIT license](https://opensource.org/license/m
 
 - [Cereal](https://uscilab.github.io/cereal/)
 - [CLI11](https://cliutils.github.io/CLI11/book/)
+- [cpp-httplib](https://github.com/yhirose/cpp-httplib)
 - [cppzmq](https://zeromq.org/)
 - [MongoDB](https://www.mongodb.com/)
 - [stduuid](https://github.com/mariusbancila/stduuid)

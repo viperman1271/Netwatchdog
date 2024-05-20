@@ -20,6 +20,7 @@ find_package(Catch2 CONFIG REQUIRED)
 find_package(cereal CONFIG REQUIRED)
 find_package(CLI11 CONFIG REQUIRED)
 find_package(cppzmq CONFIG REQUIRED)
+find_package(httplib CONFIG REQUIRED)
 find_package(mongoc-1.0 CONFIG REQUIRED)
 find_package(bsoncxx CONFIG REQUIRED)
 find_package(mongocxx CONFIG REQUIRED)
@@ -33,7 +34,12 @@ include(Catch)
 
 # Common library
 set(NETWATCHDOG_COMMON_SRC_DIR ${CMAKE_SOURCE_DIR}/source/common)
+set(NETWATCHDOG_DATABASE_SRC_DIR ${CMAKE_SOURCE_DIR}/source/database)
+
 file(GLOB LIBNETWATCHDOG_SOURCES ${NETWATCHDOG_COMMON_SRC_DIR}/*.*)
+file(GLOB NETWATCHDOG_DATABASE_SOURCES ${NETWATCHDOG_DATABASE_SRC_DIR}/*.*)
+
+include_directories(${NETWATCHDOG_DATABASE_SRC_DIR})
 
 # Common Library Tests
 set(NETWATCHDOG_COMMON_TEST_SRC_DIR ${CMAKE_SOURCE_DIR}/source/tests/common)
@@ -57,15 +63,26 @@ set(MONGOCXXLIB $<IF:$<TARGET_EXISTS:mongo::mongocxx_static>,mongo::mongocxx_sta
 include_directories(${NETWATCHDOGD_SRC_DIR} ${NETWATCHDOG_COMMON_SRC_DIR})
 
 file(GLOB NETWATCHDOGD_SOURCES ${NETWATCHDOGD_SRC_DIR}/*.*)
-file(GLOB NETWATCHDOGD_DATABASE_SOURCES ${NETWATCHDOGD_SRC_DIR}/database/*.*)
 
-add_executable(netwatchdogd ${NETWATCHDOGD_SOURCES} ${NETWATCHDOGD_DATABASE_SOURCES} ${LIBNETWATCHDOG_SOURCES})
+add_executable(netwatchdogd ${NETWATCHDOGD_SOURCES} ${NETWATCHDOG_DATABASE_SOURCES} ${LIBNETWATCHDOG_SOURCES})
 target_link_libraries(netwatchdogd PRIVATE cereal::cereal CLI11::CLI11 cppzmq ${BSONCXX_LIB} ${MONGOC_LIB} ${MONGOCXXLIB} stduuid toml11::toml11)
 target_compile_definitions(netwatchdogd PRIVATE NETWATCHDOG_SERVER)
+
+# Web server
+set(NETWATCHDOG_WEB_SRC_DIR ${CMAKE_SOURCE_DIR}/source/web)
+
+include_directories(${NETWATCHDOG_WEB_SRC_DIR})
+
+file(GLOB NETWATCHDOG_WEB_SOURCES ${NETWATCHDOG_WEB_SRC_DIR}/*.*)
+
+add_executable(web ${NETWATCHDOG_WEB_SOURCES} ${LIBNETWATCHDOG_SOURCES} ${NETWATCHDOG_DATABASE_SOURCES})
+target_compile_definitions(web PRIVATE NETWATCHDOG_SERVER)
+target_link_libraries(web PRIVATE CLI11::CLI11 stduuid httplib::httplib ${BSONCXX_LIB} ${MONGOC_LIB} ${MONGOCXXLIB})
 
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 set_target_properties(netwatchdogc PROPERTIES FOLDER "netwatchdog")
 set_target_properties(netwatchdogd PROPERTIES FOLDER "netwatchdog")
+set_target_properties(web PROPERTIES FOLDER "netwatchdog")
 set_target_properties(libwatchdog_tests PROPERTIES FOLDER "netwatchdog/tests")
 
 # Add tests

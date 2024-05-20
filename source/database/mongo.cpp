@@ -1,4 +1,4 @@
-#include "database/mongo.h"
+#include "mongo.h"
 
 #include "bson_utils.h"
 
@@ -68,7 +68,7 @@ void Mongo::AddConnectionInfo(ConnectionInfo& connInfo)
     coll.insert_one(doc_value.view());
 }
 
-void Mongo::DumpInfo(Database database, Collection collection)
+void Mongo::DumpInfo(Database database, Collection collection) const
 {
     const std::string databaseStr = std::move(GetDatabaseName(database));
     if (!DatabaseExists(databaseStr))
@@ -93,6 +93,50 @@ void Mongo::DumpInfo(Database database, Collection collection)
     {
         std::cout << Utils::BSON::ToJSON(view) << std::endl;
     }
+}
+
+bool Mongo::DumpClientInfo(const std::string& clientInfo, std::stringstream& outputStream, std::string lineEnd) const
+{
+    const std::string databaseStr = std::move(GetDatabaseName(Database::Stats));
+    if (!DatabaseExists(databaseStr))
+    {
+        return false;
+    }
+
+    mongocxx::database database = m_Client[databaseStr.c_str()];
+
+    std::string collectionStr = GetCollectionName(Collection::ConnectionInfo);
+    if (!CollectionExists(database, collectionStr))
+    {
+        return false;
+    }
+
+    mongocxx::collection collection = database[collectionStr.c_str()];
+
+
+    std::function<mongocxx::cursor(const std::string&)> find = [&collection](const std::string& clientInfo)
+    {
+        if (!clientInfo.empty())
+        {
+            bsoncxx::builder::stream::document document{};
+            document << "unique-id" << clientInfo;
+
+            return collection.find(document.view());
+        }
+        else
+        {
+            return collection.find({});
+        }
+    };
+
+    mongocxx::cursor cursor = find(clientInfo);
+    const bool anyResults = cursor.begin() != cursor.end();
+    for (bsoncxx::document::view view : cursor)
+    {
+        outputStream << Utils::BSON::ToJSON(view) << lineEnd;
+    }
+
+    return anyResults;
 }
 
 std::string Mongo::GetDatabaseName(Database database)

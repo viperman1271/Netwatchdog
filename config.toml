@@ -1,9 +1,15 @@
 [server]
 host = "*"
 port = 32000
-identity = "1dfb3684-6e2e-475e-9580-e2d612ff25d3"
+identity = ""
 
 [client]
 host = "localhost"
 port = 32000
-identity = "b57c0f72-bfdc-4d9a-af99-f9d33c92d8aa"
+identity = ""
+
+[database]
+username = "root"
+password = "password1234"
+host = "localhost"
+port = 27017

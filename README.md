@@ -14,6 +14,7 @@
     - [New Installation of vcpkg](#new-installation-of-vcpkg)
       - [Windows](#windows-1)
       - [Linux](#linux-1)
+    - [Docker](#docker)
   - [Usage](#usage)  
     - [Server](#server)  
     - [Client](#client)  
@@ -66,6 +67,10 @@ git clone https://github.com/microsoft/vcpkg.git
 cmake -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE=./vcpkg/scripts/buildsystems/vcpkg.cmake -S .
 cmake --build build --config Release
 ```
+
+### Docker
+
+To build docker images, please see docker [README.md](docker/README.md)
 
 ## Usage
 

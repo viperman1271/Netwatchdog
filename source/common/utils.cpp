@@ -37,7 +37,7 @@ namespace Utils
 #ifdef _WIN32
         std::string homeDir = GetEnvVar("USERPROFILE");
 #else
-        std::string homeDir = GetEnvVar("HOME");
+        std::string homeDir = "/etc/netwatchdog";
 #endif
 
         static std::filesystem::path path{ homeDir };

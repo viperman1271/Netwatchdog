@@ -20,7 +20,7 @@ namespace Utils
             return { value };
         }
 #else
-        const char* const value = std::getenv(envVariable.c_str());
+        const char* const value = std::getenv(envVariable);
         if (value != nullptr && strlen(value) > 0)
         {
             return { value };

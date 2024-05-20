@@ -76,6 +76,10 @@ Options:
   -p,--port INT               The port to use [defaults to 32000]
   -i,--identity TEXT          Identity
   --host TEXT                 Listening address for the server [defaults to *]
+  --username TEXT             Username for database access [defaults to root]
+  --password TEXT             Password for database access
+  --db_host TEXT              Database host address
+  --db_port INT               Database port [defaults to 27017]
 ```
 
 ### Client

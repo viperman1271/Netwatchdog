@@ -23,10 +23,42 @@ Netwatchdog is a simple application that is used to monitor network connection d
 
 Netwatchdog uses CMake to generate necessary configuration files. As a prerequisite, python must be available on the system first.
 
+If you're already using vcpkg, you can use the existing installation or create a new one.
+
+### Using Existing vcpkg
+
+#### Windows
+
 ```
-mkdir build
-cd build
-cmake ..
+cmake -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE=%VCPKG_ROOT%/scripts/buildsystems/vcpkg.cmake -S .
+cmake --build build --config Release
+```
+
+#### Linux
+```
+cmake -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE=$VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake -S .
+cmake --build build --config Release
+```
+
+### New Installation of vcpkg
+
+#### Windows
+
+```
+git clone https://github.com/microsoft/vcpkg.git
+./vcpkg/bootstrap-vcpkg.bat
+
+cmake -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE=./vcpkg/scripts/buildsystems/vcpkg.cmake -S .
+cmake --build build --config Release
+```
+
+#### Linux
+```
+git clone https://github.com/microsoft/vcpkg.git
+./vcpkg/bootstrap-vcpkg.sh
+
+cmake -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE=./vcpkg/scripts/buildsystems/vcpkg.cmake -S .
+cmake --build build --config Release
 ```
 
 ## Usage
@@ -69,5 +101,6 @@ Netwatchdog is licensed under the [MIT license](https://opensource.org/license/m
 - [Cereal](https://uscilab.github.io/cereal/)
 - [CLI11](https://cliutils.github.io/CLI11/book/)
 - [cppzmq](https://zeromq.org/)
+- [MongoDB](https://www.mongodb.com/)
 - [stduuid](https://github.com/mariusbancila/stduuid)
 - [TOML11](https://queue.cppget.org/toml11)

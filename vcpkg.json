@@ -5,6 +5,7 @@
     "catch2",
     "cereal",
     "cli11",
+    "cpp-httplib",
     "cppzmq",
     "mongo-c-driver",
     "mongo-cxx-driver",

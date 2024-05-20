@@ -20,6 +20,7 @@ find_package(Catch2 CONFIG REQUIRED)
 find_package(cereal CONFIG REQUIRED)
 find_package(CLI11 CONFIG REQUIRED)
 find_package(cppzmq CONFIG REQUIRED)
+find_package(httplib CONFIG REQUIRED)
 find_package(mongoc-1.0 CONFIG REQUIRED)
 find_package(bsoncxx CONFIG REQUIRED)
 find_package(mongocxx CONFIG REQUIRED)
@@ -64,9 +65,21 @@ add_executable(netwatchdogd ${NETWATCHDOGD_SOURCES} ${NETWATCHDOG_DATABASE_SOURC
 target_link_libraries(netwatchdogd PRIVATE cereal::cereal CLI11::CLI11 cppzmq ${BSONCXX_LIB} ${MONGOC_LIB} ${MONGOCXXLIB} stduuid toml11::toml11)
 target_compile_definitions(netwatchdogd PRIVATE NETWATCHDOG_SERVER)
 
+# Web server
+set(NETWATCHDOG_WEB_SRC_DIR ${CMAKE_SOURCE_DIR}/source/web)
+
+include_directories(${NETWATCHDOG_WEB_SRC_DIR})
+
+file(GLOB NETWATCHDOG_WEB_SOURCES ${NETWATCHDOG_WEB_SRC_DIR}/*.*)
+
+add_executable(web ${NETWATCHDOG_WEB_SOURCES} ${LIBNETWATCHDOG_SOURCES} ${NETWATCHDOG_DATABASE_SOURCES})
+target_compile_definitions(web PRIVATE NETWATCHDOG_SERVER)
+target_link_libraries(web PRIVATE CLI11::CLI11 stduuid httplib::httplib ${BSONCXX_LIB} ${MONGOC_LIB} ${MONGOCXXLIB})
+
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 set_target_properties(netwatchdogc PROPERTIES FOLDER "netwatchdog")
 set_target_properties(netwatchdogd PROPERTIES FOLDER "netwatchdog")
+set_target_properties(web PROPERTIES FOLDER "netwatchdog")
 set_target_properties(libwatchdog_tests PROPERTIES FOLDER "netwatchdog/tests")
 
 # Add tests

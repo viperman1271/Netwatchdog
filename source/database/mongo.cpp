@@ -1,4 +1,4 @@
-#include "database/mongo.h"
+#include "mongo.h"
 
 #include "bson_utils.h"
 

@@ -37,7 +37,9 @@ file(GLOB LIBNETWATCHDOG_SOURCES ${NETWATCHDOG_COMMON_SRC_DIR}/*.*)
 
 # Common Library Tests
 set(NETWATCHDOG_COMMON_TEST_SRC_DIR ${CMAKE_SOURCE_DIR}/source/tests/common)
+set(NETWATCHDOG_DATABASE_SRC_DIR ${CMAKE_SOURCE_DIR}/source/database)
 file(GLOB LIBNETWATCHDOG_TEST_SOURCES ${NETWATCHDOG_COMMON_TEST_SRC_DIR}/*.*)
+file(GLOB NETWATCHDOG_DATABASE_SOURCES ${NETWATCHDOG_DATABASE_SRC_DIR}/*.*)
 add_executable(libwatchdog_tests ${LIBNETWATCHDOG_SOURCES} ${LIBNETWATCHDOG_TEST_SOURCES})
 target_link_libraries(libwatchdog_tests PRIVATE Catch2::Catch2WithMain CLI11::CLI11)
 target_compile_definitions(libwatchdog_tests PRIVATE NETWATCHDOG_CLIENT)
@@ -57,9 +59,8 @@ set(MONGOCXXLIB $<IF:$<TARGET_EXISTS:mongo::mongocxx_static>,mongo::mongocxx_sta
 include_directories(${NETWATCHDOGD_SRC_DIR} ${NETWATCHDOG_COMMON_SRC_DIR})
 
 file(GLOB NETWATCHDOGD_SOURCES ${NETWATCHDOGD_SRC_DIR}/*.*)
-file(GLOB NETWATCHDOGD_DATABASE_SOURCES ${NETWATCHDOGD_SRC_DIR}/database/*.*)
 
-add_executable(netwatchdogd ${NETWATCHDOGD_SOURCES} ${NETWATCHDOGD_DATABASE_SOURCES} ${LIBNETWATCHDOG_SOURCES})
+add_executable(netwatchdogd ${NETWATCHDOGD_SOURCES} ${NETWATCHDOG_DATABASE_SOURCES} ${LIBNETWATCHDOG_SOURCES})
 target_link_libraries(netwatchdogd PRIVATE cereal::cereal CLI11::CLI11 cppzmq ${BSONCXX_LIB} ${MONGOC_LIB} ${MONGOCXXLIB} stduuid toml11::toml11)
 target_compile_definitions(netwatchdogd PRIVATE NETWATCHDOG_SERVER)
 

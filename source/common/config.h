@@ -138,6 +138,10 @@ namespace Config
         ConfigureDefaultValue(config, "database", "host", "localhost");
         ConfigureDefaultValue(config, "database", "port", 27017);
 
+        ConfigureDefaultValue(config, "web", "host", "0.0.0.0");
+        ConfigureDefaultValue(config, "web", "port", 8000);
+        ConfigureDefaultValue(config, "web", "serving_dir", Utils::GetBasePath().string());
+
         if (!configFileExists)
         {
             std::cout << "Configuration file [" << configPath.string() << "] not found... creating." << std::endl;
@@ -163,6 +167,10 @@ namespace Config
         options.host = toml::find<std::string>(config, CATEGORY, "host");
         options.port = toml::find<int>(config, CATEGORY, "port");
         options.identity = toml::find<std::string>(config, CATEGORY, "identity");
+
+        options.web.fileServingDir = toml::find<std::string>(config, "web", "serving_dir");
+        options.web.host = toml::find<std::string>(config, "web", "host");
+        options.web.port = toml::find<int>(config, "web", "port");
 
 #ifdef NETWATCHDOG_SERVER
         options.database.username = toml::find<std::string>(config, "database", "username");

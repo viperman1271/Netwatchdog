@@ -25,4 +25,11 @@ struct Options
         int port;
     } database;
 #endif // NETWATCHDOG_SERVER
+
+    struct
+    {
+        std::string fileServingDir;
+        std::string host;
+        int port;
+    } web;
 };

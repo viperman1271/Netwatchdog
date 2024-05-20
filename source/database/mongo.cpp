@@ -95,7 +95,7 @@ void Mongo::DumpInfo(Database database, Collection collection) const
     }
 }
 
-bool Mongo::DumpClientInfo(const std::string& clientInfo, std::stringstream& outputStream) const
+bool Mongo::DumpClientInfo(const std::string& clientInfo, std::stringstream& outputStream, std::string lineEnd) const
 {
     const std::string databaseStr = std::move(GetDatabaseName(Database::Stats));
     if (!DatabaseExists(databaseStr))
@@ -133,7 +133,7 @@ bool Mongo::DumpClientInfo(const std::string& clientInfo, std::stringstream& out
     const bool anyResults = cursor.begin() != cursor.end();
     for (bsoncxx::document::view view : cursor)
     {
-        outputStream << Utils::BSON::ToJSON(view) << "<br/>";
+        outputStream << Utils::BSON::ToJSON(view) << lineEnd;
     }
 
     return anyResults;

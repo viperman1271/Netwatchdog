@@ -30,7 +30,7 @@ public:
 
     void AddConnectionInfo(ConnectionInfo& connInfo);
     void DumpInfo(Database database, Collection collection) const;
-    bool DumpClientInfo(const std::string& clientInfo, std::stringstream& outputStream) const;
+    bool DumpClientInfo(const std::string& clientInfo, std::stringstream& outputStream, std::string lineEnd) const;
 
 private:
     static std::string GetDatabaseName(Database database);

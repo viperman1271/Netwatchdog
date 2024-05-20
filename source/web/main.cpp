@@ -29,7 +29,7 @@ int main(int argc, char** argv)
         const std::string clientId = req.matches[1];
 
         std::stringstream data;
-        if (mongo.DumpClientInfo(clientId, data))
+        if (mongo.DumpClientInfo(clientId, data, "<br/>"))
         {
             std::stringstream ss;
             ss << "<!DOCTYPE html>" << std::endl;

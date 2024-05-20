@@ -39,7 +39,8 @@ file(GLOB LIBNETWATCHDOG_SOURCES ${NETWATCHDOG_COMMON_SRC_DIR}/*.*)
 set(NETWATCHDOG_COMMON_TEST_SRC_DIR ${CMAKE_SOURCE_DIR}/source/tests/common)
 file(GLOB LIBNETWATCHDOG_TEST_SOURCES ${NETWATCHDOG_COMMON_TEST_SRC_DIR}/*.*)
 add_executable(libwatchdog_tests ${LIBNETWATCHDOG_SOURCES} ${LIBNETWATCHDOG_TEST_SOURCES})
-target_link_libraries(libwatchdog_tests PRIVATE Catch2::Catch2WithMain)
+target_link_libraries(libwatchdog_tests PRIVATE Catch2::Catch2WithMain CLI11::CLI11)
+target_compile_definitions(libwatchdog_tests PRIVATE NETWATCHDOG_CLIENT)
 
 # Client executable
 set(NETWATCHDOGC_SRC_DIR ${CMAKE_SOURCE_DIR}/source/client)

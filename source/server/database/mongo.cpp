@@ -5,6 +5,8 @@
 #include <mongocxx/exception/exception.hpp>
 #include <bsoncxx/builder/stream/document.hpp>
 
+#include <sstream>
+
 mongocxx::instance Mongo::ms_Instance{};
 
 Mongo::Mongo(const Options& options)

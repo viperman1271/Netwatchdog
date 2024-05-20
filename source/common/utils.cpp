@@ -51,12 +51,16 @@ namespace Utils
 
     void SetThreadName(std::thread& thread, const std::string& name)
     {
+#ifdef _WIN32
         HANDLE handle = thread.native_handle();
         SetThreadDescription(handle, std::wstring(name.begin(), name.end()).c_str());
+#endif
     }
 
     void SetThreadName(const std::string& name)
     {
+#ifdef _WIN32
         SetThreadDescription(GetCurrentThread(), std::wstring(name.begin(), name.end()).c_str());
+#endif
     }
 }

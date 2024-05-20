@@ -29,6 +29,8 @@
 *.ipdb
 *.iobj
 *.build
+vcpkg/
+vcpkg_installed/
 
 # Visual Studio Code
 .vscode/

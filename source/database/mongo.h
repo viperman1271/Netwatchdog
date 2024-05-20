@@ -29,7 +29,8 @@ public:
     mongocxx::client& GetClient() { return m_Client; }
 
     void AddConnectionInfo(ConnectionInfo& connInfo);
-    void DumpInfo(Database database, Collection collection);
+    void DumpInfo(Database database, Collection collection) const;
+    bool DumpClientInfo(const std::string& clientInfo, std::stringstream& outputStream) const;
 
 private:
     static std::string GetDatabaseName(Database database);

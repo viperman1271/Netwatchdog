@@ -41,7 +41,7 @@ TEST_CASE("ConfigureIfEnvVarNotEmpty")
     CHECK(value == ENV_VALUE);
 
     static const std::string CONFIG_VALUE { "34567" };
-    config["test", "value2"] = CONFIG_VALUE;
+    config["test"]["value2"] = CONFIG_VALUE;
     Config::ConfigureIfEnvVarNotEmpty(config, "test", "value2", "ENV_c11c0f45-aadc-4d9a-af99-f9e33b92d9bd");
 
     Config::GetValue(config, "test", "value2", value);
@@ -64,7 +64,7 @@ TEST_CASE("ConfigureDefaultValue")
     CHECK(value == CONFIG_VALUE);
 
     static const std::string VALUE{ "56789" };
-    config["test", "value2"] = VALUE;
+    config["test"]["value2"] = VALUE;
 
     Config::ConfigureDefaultValue(config, "test", "value2", CONFIG_VALUE);
 

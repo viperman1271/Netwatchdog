@@ -2,6 +2,7 @@
 ![Logo](./Icon_256.png)
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)
+[![Build](https://github.com/viperman1271/Netwatchdog/actions/workflows/cmake-multi-platform.yml/badge.svg)](https://github.com/viperman1271/Netwatchdog/actions/workflows/cmake-multi-platform.yml)
 
 ## Table of Contents
   - [Table of Contents](#table-of-contents)

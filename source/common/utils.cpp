@@ -7,12 +7,35 @@
 
 namespace Utils
 {
+    std::string GetEnvVar(const char* envVariable)
+    {
+#ifdef _WIN32
+        constexpr int envVarStrLen = 256;
+        char* const value = reinterpret_cast<char*>(alloca(envVarStrLen * sizeof(char)));
+        memset(value, 0, envVarStrLen);
+
+        GetEnvironmentVariable(envVariable, value, envVarStrLen);
+        if (strlen(value) > 0)
+        {
+            return { value };
+        }
+#else
+        const char* const value = std::getenv(envVariable.c_str());
+        if (value != nullptr && strlen(value) > 0)
+        {
+            return { value };
+        }
+#endif
+
+        return {};
+    }
+
     std::filesystem::path& GetBasePath()
     {
 #ifdef _WIN32
-        const char* homeDir = getenv("USERPROFILE");
+        std::string homeDir = GetEnvVar("USERPROFILE");
 #else
-        const char* homeDir = getenv("HOME");
+        std::string homeDir = GetEnvVar("HOME");
 #endif
 
         static std::filesystem::path path{ homeDir };

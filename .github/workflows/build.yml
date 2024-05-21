@@ -4,7 +4,10 @@ name: Build
 
 on:
   push:
-    branches: [ "master" ]
+    branches: 
+      - "master"
+    tags:
+      - v*.*.*
   pull_request:
     branches: [ "master" ]
 
@@ -65,12 +68,12 @@ jobs:
         ./vcpkg/bootstrap-vcpkg.sh
     
     - name: Cache vcpkg
-      uses: actions/cache@v2
+      uses: actions/cache@v4
       with:
         path: ${{ github.workspace }}/build/vcpkg_installed
-        key: ${{ runner.os }}-vcpkg-${{ hashFiles('vcpkg.json') }}
+        key: ${{ runner.os }}-${{ matrix.cpp_compiler }}-vcpkg-${{ hashFiles('vcpkg.json') }}
         restore-keys: |
-          ${{ runner.os }}-vcpkg-
+          ${{ runner.os }}-${{ matrix.cpp_compiler }}-vcpkg-${{ hashFiles('vcpkg.json') }}
 
     - name: Configure CMake
       # Configure CMake in a 'build' subdirectory. `CMAKE_BUILD_TYPE` is only required if you are using a single-configuration generator such as make.
@@ -92,3 +95,89 @@ jobs:
       # Execute tests defined by the CMake configuration. Note that --build-config is needed because the default Windows generator is a multi-config generator (Visual Studio generator).
       # See https://cmake.org/cmake/help/latest/manual/ctest.1.html for more detail
       run: ctest --build-config ${{ matrix.build_type }}
+
+    - name: Upload Build Artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: artifacts-${{ runner.os }}-${{ matrix.cpp_compiler }}
+        path: ${{ github.workspace }}/bin
+
+  deploy:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest]
+        build_type: [Release]
+        c_compiler: [clang]
+        include:
+          - os: ubuntu-latest
+            c_compiler: clang
+            cpp_compiler: clang++
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/')
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: artifacts-${{ runner.os }}-${{ matrix.cpp_compiler }}
+          path: ${{ github.workspace }}/bin
+
+      - name: Create tmp directories
+        run: |
+          mkdir ${{ github.workspace }}/tmp
+          mkdir ${{ github.workspace }}/tmp/server
+          mkdir ${{ github.workspace }}/tmp/client
+          mkdir ${{ github.workspace }}/tmp/web
+
+      - name: Copy files to correct location
+        run: |
+          cp ${{ github.workspace }}/bin/netwatchdogd ${{ github.workspace }}/tmp/server/.
+          cp ${{ github.workspace }}/docker/server/* ${{ github.workspace }}/tmp/server/.
+          cp ${{ github.workspace }}/bin/netwatchdogc ${{ github.workspace }}/tmp/client/.
+          cp ${{ github.workspace }}/docker/client/* ${{ github.workspace }}/tmp/client/.
+          cp ${{ github.workspace }}/bin/web ${{ github.workspace }}/tmp/web/.
+          cp ${{ github.workspace }}/docker/web/* ${{ github.workspace }}/tmp/web/.
+      
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Extract version from tag
+        id: extract_version
+        run: echo "::set-output name=version::${GITHUB_REF#refs/tags/}"
+
+      - name: Build and push server Docker image
+        uses: docker/build-push-action@v4
+        with:
+          context: ./tmp/server
+          push: true
+          tags: |
+            viperman1271/netwatchdog-server:${{ steps.extract_version.outputs.version }}
+            viperman1271/netwatchdog-server:latest
+
+      - name: Build and push client Docker image
+        uses: docker/build-push-action@v4
+        with:
+          context: ./tmp/client
+          push: true
+          tags: |
+            viperman1271/netwatchdog-client:${{ steps.extract_version.outputs.version }}
+            viperman1271/netwatchdog-client:latest
+
+      - name: Build and push server web image
+        uses: docker/build-push-action@v4
+        with:
+          context: ./tmp/web
+          push: true
+          tags: |
+            viperman1271/netwatchdog-web:${{ steps.extract_version.outputs.version }}
+            viperman1271/netwatchdog-web:latest

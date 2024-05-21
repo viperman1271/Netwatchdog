@@ -1,0 +1,33 @@
+version: "3"
+
+services:
+  server:
+    image: viperman1271/netwatchdog-web:latest
+    container_name: netwatchdog-server
+    restart: always
+    environment:
+      - MONGO_USERNAME=root
+      - MONGO_PASSWORD=netwatchdog
+      - MONGO_HOST=netwatchdog
+    volumes:
+      - /etc/netwatchdog:~/docker/netwatchdog/etc/netwatchdog
+  client:
+    image: viperman1271/netwatchdog-web:latest
+    container_name: netwatchdog-server
+    restart: always
+    environment:
+      - MONGO_USERNAME=root
+      - MONGO_PASSWORD=netwatchdog
+      - MONGO_HOST=netwatchdog
+    volumes:
+      - /etc/netwatchdog:~/docker/netwatchdog/etc/netwatchdog
+  web:
+    image: viperman1271/netwatchdog-web:latest
+    container_name: netwatchdog-web
+    restart: always
+    environment:
+      - MONGO_USERNAME=root
+      - MONGO_PASSWORD=netwatchdog
+      - MONGO_HOST=netwatchdog
+    volumes:
+      - /etc/netwatchdog:~/docker/netwatchdog/etc/netwatchdog

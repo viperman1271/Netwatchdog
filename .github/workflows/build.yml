@@ -6,7 +6,6 @@ on:
   push:
     branches: 
       - "master"
-      - "dev/docker"
     tags:
       - v*.*.*
   pull_request:

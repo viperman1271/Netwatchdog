@@ -156,15 +156,29 @@ jobs:
         id: extract_version
         run: echo "::set-output name=version::${GITHUB_REF#refs/tags/}"
 
-      - name: Build and push Docker image
+      - name: Build and push server Docker image
         uses: docker/build-push-action@v4
         with:
-          context: .
+          context: ./tmp/server
           push: true
           tags: |
             viperman1271/netwatchdog-server:${{ steps.extract_version.outputs.version }}
             viperman1271/netwatchdog-server:latest
+
+      - name: Build and push client Docker image
+        uses: docker/build-push-action@v4
+        with:
+          context: ./tmp/client
+          push: true
+          tags: |
             viperman1271/netwatchdog-client:${{ steps.extract_version.outputs.version }}
             viperman1271/netwatchdog-client:latest
+
+      - name: Build and push server web image
+        uses: docker/build-push-action@v4
+        with:
+          context: ./tmp/web
+          push: true
+          tags: |
             viperman1271/netwatchdog-web:${{ steps.extract_version.outputs.version }}
             viperman1271/netwatchdog-web:latest

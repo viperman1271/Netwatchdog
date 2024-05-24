@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Collapsible Sidebar Example</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <style>
+    .transition-width {
+      transition: width 0.3s;
+    }
+  </style>
+  <link href="styles/styles.css" rel="stylesheet"/>
+</head>
+<body class="bg-login bg-gray-100">
+
+  <div class="min-h-screen flex">
+
+    <!-- Sidebar -->
+    <div id="sidebar" class="w-64 bg-gray-800 text-white flex flex-col transition-width">
+      <div class="p-4 text-2xl font-bold flex items-center">
+        <i class="fas fa-bars mr-2"></i>
+        <span class="sidebar-text">Netwatchdog</span>
+      </div>
+      <nav class="flex-grow">
+        <ul>
+          <li class="p-4 hover:bg-gray-700 flex items-center">
+            <i class="fas fa-home mr-2"></i>
+            <span class="sidebar-text">Home</span>
+          </li>
+          <li class="p-4 hover:bg-gray-700 flex items-center">
+            <i class="fas fa-info-circle mr-2"></i>
+            <span class="sidebar-text">About</span>
+          </li>
+          <li class="p-4 hover:bg-gray-700 flex items-center">
+            <i class="fas fa-concierge-bell mr-2"></i>
+            <span class="sidebar-text">Services</span>
+          </li>
+          <li class="p-4 hover:bg-gray-700 flex items-center">
+            <i class="fas fa-envelope mr-2"></i>
+            <span class="sidebar-text">Contact</span>
+          </li>
+        </ul>
+      </nav>
+      <button id="toggleSidebar" class="bg-gray-700 text-white p-2 m-4 flex items-center justify-center">
+        <i class="fas fa-arrow-left"></i><span class="sidebar-text">Collapse</span>
+      </button>
+    </div>
+
+    <!-- Main Content -->
+    <div class="flex-grow p-6">
+      <h1 class="text-4xl font-bold mb-4">Main Content</h1>
+      <p>This is the main content area. You can add your content here.</p>
+    </div>
+
+  </div>
+
+  <script>
+    document.getElementById('toggleSidebar').addEventListener('click', function() {
+      const sidebar = document.getElementById('sidebar');
+      sidebar.classList.toggle('w-64');
+      sidebar.classList.toggle('w-16');
+
+      // Toggle visibility of text elements
+      const sidebarTextElements = document.querySelectorAll('.sidebar-text');
+      sidebarTextElements.forEach(element => {
+        element.classList.toggle('hidden');
+      });
+
+      // Toggle icon direction
+      const toggleIcon = document.querySelector('#toggleSidebar i');
+      if (sidebar.classList.contains('w-64')) {
+        toggleIcon.classList.remove('fa-arrow-right');
+        toggleIcon.classList.add('fa-arrow-left');
+      } else {
+        toggleIcon.classList.remove('fa-arrow-left');
+        toggleIcon.classList.add('fa-arrow-right');
+      }
+    });
+  </script>
+
+</body>
+</html>

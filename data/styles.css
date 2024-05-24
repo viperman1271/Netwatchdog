@@ -1,0 +1,17 @@
+body {
+  background-color: white;
+  color: black;
+}
+
+.bg-login {
+  background-image: url('/images/background.jpeg');
+  background-size: cover;
+  background-position: center;
+}
+
+@media (prefers-color-scheme: dark) {
+  body {
+    background-color: black;
+    color: white;
+  }
+}

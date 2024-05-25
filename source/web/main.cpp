@@ -6,7 +6,6 @@
 #include <nlohmann/json.hpp>
 
 #include <filesystem>
-#include <format>
 
 bool readFile(std::filesystem::path& filePath, httplib::Response& res, std::string& content)
 {
@@ -206,13 +205,14 @@ int main(int argc, char** argv)
             ss << baseIndent << "<tbody>" << std::endl;
             for (const ConnectionInfo& connInfo : connInfos)
             {
-                const std::string href = std::format("<a href=\"dashboard.html?logs&clientId={}\">", connInfo.m_UniqueId);
+                char fullLink[256];
+                sprintf(fullLink, "<a href=\"dashboard.html?logs&clientId=%s\">", connInfo.m_UniqueId.c_str());
 
                 const std::string time = convertHighResRepToString(connInfo.m_Time);
 
                 ss << baseIndent << "    <tr class=\"text-gray-900\">" << std::endl;
                 ss << baseIndent << "        <td class=\"text-center py-2 border-b border-gray-200\">" << (connInfo.m_Connection == ConnectionInfo::Type::Connection ? "Connection" : "Disconnection") << "</td>" << std::endl;
-                ss << baseIndent << "        <td class=\"text-center py-2 border-b border-gray-200\">" << href << connInfo.m_UniqueId << "</a>" << "</td>" << std::endl;
+                ss << baseIndent << "        <td class=\"text-center py-2 border-b border-gray-200\">" << fullLink << connInfo.m_UniqueId << "</a>" << "</td>" << std::endl;
                 ss << baseIndent << "        <td class=\"text-center py-2 border-b border-gray-200\">" << time << "</td>" << std::endl;
                 ss << baseIndent << "    </tr>" << std::endl;
             }

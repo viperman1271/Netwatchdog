@@ -110,9 +110,9 @@ namespace Config
         options.client.port = toml::find<int>(config, "client", "port");
         options.client.identity = toml::find<std::string>(config, "client", "identity");
 
-        options.client.host = toml::find<std::string>(config, "server", "host");
-        options.client.port = toml::find<int>(config, "server", "port");
-        options.client.identity = toml::find<std::string>(config, "server", "identity");
+        options.server.host = toml::find<std::string>(config, "server", "host");
+        options.server.port = toml::find<int>(config, "server", "port");
+        options.server.identity = toml::find<std::string>(config, "server", "identity");
 
         options.web.fileServingDir = toml::find<std::string>(config, "web", "serving_dir");
         options.web.host = toml::find<std::string>(config, "web", "host");

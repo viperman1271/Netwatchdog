@@ -51,6 +51,80 @@ void replaceStrInString(std::string& baseString, const std::string& strToFind, c
     }
 }
 
+enum class TokenResult
+{
+    Correct,
+    Empty,
+    Invalid,
+};
+
+TokenResult validateToken(const Options& options, const httplib::Request& req)
+{
+    const std::string auth_header = req.get_header_value("Authorization");
+
+    if (auth_header.empty() || auth_header.substr(0, 7) != "Bearer ")
+    {
+        return TokenResult::Empty;
+    }
+
+    std::string token = auth_header.substr(7); // Remove "Bearer " prefix
+    if (!token.empty())
+    {
+        jwt::decoded_jwt decoded = jwt::decode(token);
+        jwt::verifier verifier = jwt::verify().allow_algorithm(jwt::algorithm::hs256{ options.server.identity }).with_issuer("auth_server");
+
+        std::error_code error;
+        verifier.verify(decoded, error);
+
+        if (!error)
+        {
+            return TokenResult::Correct;
+        }
+    }
+    
+    return TokenResult::Invalid;
+}
+
+bool validateToken(const Options& options, const httplib::Request& req, httplib::Response& res)
+{
+    switch (validateToken(options, req))
+    {
+    case TokenResult::Correct:
+        res.status = 200;
+        res.set_content("Access granted to protected resource", "text/plain");
+        return true;
+
+    case TokenResult::Empty:
+        res.status = 401;
+        res.set_content("Authorization required", "text/plain");
+        break;
+
+    case TokenResult::Invalid:
+        res.status = 403;
+        res.set_content("Invalid token", "text/plain");
+        break;
+    };
+
+    return false;
+}
+
+std::string convertHighResRepToString(std::chrono::system_clock::duration::rep rep)
+{
+    const std::chrono::system_clock::duration system_duration(rep);
+
+    const std::chrono::system_clock::time_point system_time_point(system_duration);
+
+    const std::time_t time_t_epoch = std::chrono::system_clock::to_time_t(system_time_point);
+
+    const std::tm* const local_tm = std::localtime(&time_t_epoch);
+
+    // Step 6: Format tm into a string
+    char buffer[100];
+    std::strftime(buffer, sizeof(buffer), "%F %T", local_tm);
+
+    return std::string(buffer);
+}
+
 int main(int argc, char** argv)
 {
     Options options;
@@ -98,15 +172,56 @@ int main(int argc, char** argv)
         std::string content;
         readFile(filePath, res, content);
 
+//         if (!validateToken(options, req, res))
+//         {
+//             replaceStrInString(content, "${{TABLE_CONTENTS}}", "");
+//             res.set_content(content, "text/html");
+//             return;
+//         }
+
         if (req.params.contains("logs"))
         {
+            replaceStrInString(content, "${{TABLE_HEADER}}", "Connection Logs");
 
+            std::string clientId{};
+            if (req.params.contains("clientId"))
+            {
+                clientId = req.params.equal_range("clientId").first->second;
+            }
+
+            std::vector<ConnectionInfo> connInfos;
+            mongo.FetchClientInfo(clientId, connInfos);
+
+            const std::string baseIndent = "                                    ";
+            std::stringstream ss;
+
+            ss << baseIndent << "<thead>" << std::endl;
+            ss << baseIndent << "    <tr class=\"w-full bg-gray-100 text-gray-900\">" << std::endl;
+            ss << baseIndent << "        <th class=\"text-center py-2 border-b border-gray-200 text-left sortable\" data-column=\"conn\">Log Type</th>" << std::endl;
+            ss << baseIndent << "        <th class=\"text-center py-2 border-b border-gray-200 text-left sortable\" data-column=\"client\">Client ID</th>" << std::endl;
+            ss << baseIndent << "        <th class=\"text-center py-2 border-b border-gray-200 text-left sortable\" data-column=\"time\">Time</th>" << std::endl;
+            ss << baseIndent << "    </tr>" << std::endl;
+            ss << baseIndent << "</thead>" << std::endl;
+            ss << baseIndent << "<tbody>" << std::endl;
+            for (const ConnectionInfo& connInfo : connInfos)
+            {
+                const std::string href = std::format("<a href=\"dashboard.html?logs&clientId={}\">", connInfo.m_UniqueId);
+
+                const std::string time = convertHighResRepToString(connInfo.m_Time);
+
+                ss << baseIndent << "    <tr class=\"text-gray-900\">" << std::endl;
+                ss << baseIndent << "        <td class=\"text-center py-2 border-b border-gray-200\">" << (connInfo.m_Connection == ConnectionInfo::Type::Connection ? "Connection" : "Disconnection") << "</td>" << std::endl;
+                ss << baseIndent << "        <td class=\"text-center py-2 border-b border-gray-200\">" << href << connInfo.m_UniqueId << "</a>" << "</td>" << std::endl;
+                ss << baseIndent << "        <td class=\"text-center py-2 border-b border-gray-200\">" << time << "</td>" << std::endl;
+                ss << baseIndent << "    </tr>" << std::endl;
+            }
+            ss << baseIndent << "</tbody>" << std::endl;
+
+            replaceStrInString(content, "${{TABLE_CONTENTS}}", ss.str());
         }
         else
         {
-//             std::stringstream data;
-//             mongo.DumpClientInfo(clientId, data, "<br/>");
-
+            replaceStrInString(content, "${{TABLE_HEADER}}", "");
             replaceStrInString(content, "${{TABLE_CONTENTS}}", "");
         }
 
@@ -115,39 +230,7 @@ int main(int argc, char** argv)
 
     svr.Get("/api/protected", [&](const httplib::Request& req, httplib::Response& res)
     {
-        const std::string auth_header = req.get_header_value("Authorization");
-
-        if (auth_header.empty() || auth_header.substr(0, 7) != "Bearer ")
-        {
-            res.status = 401;
-            res.set_content("Authorization required", "text/plain");
-            return;
-        }
-
-        std::string token = auth_header.substr(7); // Remove "Bearer " prefix
-        if (!token.empty())
-        {
-            jwt::decoded_jwt decoded = jwt::decode(token);
-            jwt::verifier verifier = jwt::verify().allow_algorithm(jwt::algorithm::hs256{ options.server.identity }).with_issuer("auth_server");
-
-            std::error_code error;
-            verifier.verify(decoded, error);
-
-            if (!error)
-            {
-                res.set_content("Access granted to protected resource", "text/plain");
-            }
-            else
-            {
-                res.status = 403;
-                res.set_content("Invalid token", "text/plain");
-            }
-        }
-        else
-        {
-            res.status = 403;
-            res.set_content("Invalid token", "text/plain");
-        }
+        validateToken(options, req, res);
     });
 
     svr.Get(R"(/api/(.*))", [&](const httplib::Request& req, httplib::Response& res)
@@ -189,40 +272,12 @@ int main(int argc, char** argv)
         }
     });
 
-    svr.Get(R"(/client-data/(.*))", [&mongo](const httplib::Request& req, httplib::Response& res) 
+    svr.Post("/api/client-info/clear", [&mongo](const httplib::Request& req, httplib::Response& res) 
     {
-        const std::string clientId = req.matches[1];
+        auto body = nlohmann::json::parse(req.body);
+        std::string clientId = body["clientId"];
 
-        std::stringstream data;
-        if (mongo.DumpClientInfo(clientId, data, "<br/>"))
-        {
-            std::stringstream ss;
-            ss << "<!DOCTYPE html>" << std::endl;
-            ss << "<html lang=\"en\">" << std::endl;
-            ss << "<head>" << std::endl;
-            ss << "    <meta charset=\"UTF-8\">" << std::endl;
-            ss << "    <meta name = \"viewport\" content = \"width=device-width, initial-scale=1.0\">" << std::endl;
-            ss << "    <title>netwatchdog: " << clientId << "</title>" << std::endl;
-            ss << "    <link rel = \"apple-touch-icon\" sizes=\"180x180\" href=\"/data/apple-touch-icon.png\">" << std::endl;
-            ss << "    <link rel=\"icon\" type=\"image/png\" sizes=\"32x32\" href=\"/data/favicon-32x32.png\">" << std::endl;
-            ss << "    <link rel=\"icon\" type=\"image/png\" sizes=\"16x16\" href=\"/data/favicon-16x16.png\">" << std::endl;
-            ss << "    <link rel=\"icon\" type=\"image/x-icon\" href=\"/data/favicon.ico\">" << std::endl;
-            ss << "    <link rel=\"manifest\" href=\"/data/site.webmanifest\">" << std::endl;
-            ss << "    <link rel = \"stylesheet\" href=\"/data/styles.css\">" << std::endl;
-            ss << "</head>" << std::endl;
-            ss << "<body>" << std::endl;
-            ss << "    <h1>netwatchdog: " << clientId << "</h1>" << std::endl;
-            ss << data.str();
-            ss << "</body>" << std::endl;
-            ss << "</html>" << std::endl;
-
-            res.set_content(ss.str(), "text/html");
-            res.status = 400;
-        }
-        else
-        {
-            res.status = 404;
-        }
+        mongo.DeleteInfo(Mongo::Database::Stats, Mongo::Collection::ConnectionInfo, clientId);
     });
 
     svr.listen(options.web.host, options.web.port);

@@ -44,5 +44,5 @@ private:
     std::vector<std::string> m_PrevConnectedClients;
     std::unique_ptr<ConnectionMonitor> m_ConnectionMonitor;
 
-    Mongo m_Database;
+    Options m_Options;
 };

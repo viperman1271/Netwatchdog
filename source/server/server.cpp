@@ -13,7 +13,7 @@ NetWatchdogServer::NetWatchdogServer(const Options& options)
     , m_ListenAddress(options.server.host)
     , m_Identity(options.server.identity)
     , m_ShouldContinue(true)
-    , m_Database(options)
+    , m_Options(options)
 {
 }
 
@@ -96,6 +96,12 @@ void NetWatchdogServer::Monitor()
 
 void NetWatchdogServer::HandleClientConnected(const std::string& identity)
 {
+    Mongo database(m_Options);
+    if (!database.IsConnected())
+    {
+        return;
+    }
+
     std::vector<std::string>::const_iterator iter = std::find_if(
         m_PrevConnectedClients.begin(),
         m_PrevConnectedClients.end(),
@@ -109,12 +115,18 @@ void NetWatchdogServer::HandleClientConnected(const std::string& identity)
 
         connInfo.m_UniqueId = identity;
         connInfo.m_Connection = ConnectionInfo::Type::Connection;
-        m_Database.AddConnectionInfo(connInfo);
+        database.AddConnectionInfo(connInfo);
     }
 }
 
 void NetWatchdogServer::HandleClientDisconnected(const zmq_event_t& zmqEvent, const char* addr)
 {
+    Mongo database(m_Options);
+    if (!database.IsConnected())
+    {
+        return;
+    }
+
     ConnectionInfo connInfo;
 
     {
@@ -154,7 +166,7 @@ void NetWatchdogServer::HandleClientDisconnected(const zmq_event_t& zmqEvent, co
     {
         connInfo.m_UniqueId = disconnectedClient;
         connInfo.m_Connection = ConnectionInfo::Type::Disconnection;
-        m_Database.AddConnectionInfo(connInfo);
+        database.AddConnectionInfo(connInfo);
 
         std::cout << "Disconnected: " << disconnectedClient << std::endl;
     }

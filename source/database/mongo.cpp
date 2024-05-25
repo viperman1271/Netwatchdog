@@ -58,7 +58,7 @@ bool Mongo::IsConnected() const
 void Mongo::AddConnectionInfo(ConnectionInfo& connInfo)
 {
     const std::string databaseStr = std::move(GetDatabaseName(Database::Stats));
-    const std::string collectionStr = std::move(GetCollectionName(Collection::ConnectionInfo));
+    const std::string collectionStr = std::move(GetCollectionName(Collection::Connection));
 
     mongocxx::database db = m_Client[databaseStr.c_str()];
     mongocxx::collection coll = db[collectionStr.c_str()];
@@ -107,7 +107,7 @@ bool Mongo::DumpClientInfo(const std::string& clientInfo, std::stringstream& out
 
     mongocxx::database database = m_Client[databaseStr.c_str()];
 
-    std::string collectionStr = GetCollectionName(Collection::ConnectionInfo);
+    std::string collectionStr = GetCollectionName(Collection::Connection);
     if (!CollectionExists(database, collectionStr))
     {
         return false;
@@ -150,7 +150,7 @@ bool Mongo::FetchClientInfo(const std::string& clientId, std::vector<ConnectionI
 
     mongocxx::database database = m_Client[databaseStr.c_str()];
 
-    std::string collectionStr = GetCollectionName(Collection::ConnectionInfo);
+    std::string collectionStr = GetCollectionName(Collection::Connection);
     if (!CollectionExists(database, collectionStr))
     {
         return false;
@@ -219,6 +219,36 @@ void Mongo::DeleteInfo(Database db, Collection coll, const std::string& clientId
     mongocxx::stdx::optional<mongocxx::result::delete_result> result = collection.delete_many(filter_builder.view());
 }
 
+void Mongo::CreateUser(User& user)
+{
+    const std::string databaseStr = std::move(GetDatabaseName(Database::Meta));
+    const std::string collectionStr = std::move(GetCollectionName(Collection::User));
+
+    mongocxx::database db = m_Client[databaseStr.c_str()];
+    mongocxx::collection coll = db[collectionStr.c_str()];
+
+    bsoncxx::builder::stream::document document{};
+    user.serialize(document);
+
+    bsoncxx::document::value doc_value = document << bsoncxx::builder::stream::finalize;
+    coll.insert_one(doc_value.view());
+}
+
+void Mongo::CreateApiKey(ApiKey& apiKey)
+{
+    const std::string databaseStr = std::move(GetDatabaseName(Database::Meta));
+    const std::string collectionStr = std::move(GetCollectionName(Collection::ApiKeys));
+
+    mongocxx::database db = m_Client[databaseStr.c_str()];
+    mongocxx::collection coll = db[collectionStr.c_str()];
+
+    bsoncxx::builder::stream::document document{};
+    apiKey.serialize(document);
+
+    bsoncxx::document::value doc_value = document << bsoncxx::builder::stream::finalize;
+    coll.insert_one(doc_value.view());
+}
+
 std::string Mongo::GetDatabaseName(Database database)
 {
     switch (database)
@@ -237,8 +267,14 @@ std::string Mongo::GetCollectionName(Collection collection)
 {
     switch (collection)
     {
-    case Collection::ConnectionInfo:
+    case Collection::Connection:
         return "conn-info";
+
+    case Collection::User:
+        return "user";
+
+    case Collection::ApiKeys:
+        return "api-keys";
     };
 
     return {};

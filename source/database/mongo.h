@@ -20,7 +20,9 @@ public:
 
     enum class Collection
     {
-        ConnectionInfo
+        Connection,
+        User,
+        ApiKeys,
     };
 
 public:
@@ -35,6 +37,9 @@ public:
     bool DumpClientInfo(const std::string& clientId, std::stringstream& outputStream, std::string lineEnd) const;
     bool FetchClientInfo(const std::string& clientId, std::vector<ConnectionInfo>& connInfo) const;
     void DeleteInfo(Database database, Collection collection, const std::string& clientId);
+
+    void CreateUser(User& user);
+    void CreateApiKey(ApiKey& apiKey);
 
 private:
     static std::string GetDatabaseName(Database database);

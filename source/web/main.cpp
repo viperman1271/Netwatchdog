@@ -277,7 +277,7 @@ int main(int argc, char** argv)
         auto body = nlohmann::json::parse(req.body);
         std::string clientId = body["clientId"];
 
-        mongo.DeleteInfo(Mongo::Database::Stats, Mongo::Collection::ConnectionInfo, clientId);
+        mongo.DeleteInfo(Mongo::Database::Stats, Mongo::Collection::Connection, clientId);
     });
 
     svr.listen(options.web.host, options.web.port);

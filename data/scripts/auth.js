@@ -1,7 +1,7 @@
 function checkTokenAndRedirect() {
     const token = localStorage.getItem('authToken');
     if (token) {
-        fetch('/protected', {
+        fetch('/api/protected', {
             method: 'GET',
             headers: {
                 'Authorization': 'Bearer ' + token

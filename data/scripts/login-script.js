@@ -5,7 +5,7 @@ document.getElementById('login-form').addEventListener('submit', function(event)
     var password = document.getElementById('password').value;
 
     var xhr = new XMLHttpRequest();
-    xhr.open('POST', '/login', true);
+    xhr.open('POST', '/api/login', true);
     xhr.setRequestHeader('Content-Type', 'application/json;charset=UTF-8');
 
     xhr.onreadystatechange = function () {

@@ -7,7 +7,7 @@
 
 #include <filesystem>
 
-void readFile(std::filesystem::path& filePath, httplib::Response& res)
+bool readFile(std::filesystem::path& filePath, httplib::Response& res, std::string& content)
 {
     if (std::filesystem::exists(filePath))
     {
@@ -24,8 +24,9 @@ void readFile(std::filesystem::path& filePath, httplib::Response& res)
             memset(fileContents, 0, fileSize + 1);
             file.read(fileContents, fileSize);
 
-            //res.status = 200;
-            res.set_content(fileContents, "text/html");
+            content = fileContents;
+
+            return true;
         }
         else
         {
@@ -35,6 +36,18 @@ void readFile(std::filesystem::path& filePath, httplib::Response& res)
     else
     {
         res.status = 404;
+    }
+
+    return false;
+}
+
+void replaceStrInString(std::string& baseString, const std::string& strToFind, const std::string& strToReplaceFoundStr) 
+{
+    size_t pos = 0;
+    while ((pos = baseString.find(strToFind, pos)) != std::string::npos) 
+    {
+        baseString.replace(pos, strToFind.length(), strToReplaceFoundStr);
+        pos += strToReplaceFoundStr.length();
     }
 }
 
@@ -66,34 +79,65 @@ int main(int argc, char** argv)
     svr.set_mount_point("/images", func("images"));
     svr.set_mount_point("/scripts", func("scripts"));
     svr.set_mount_point("/styles", func("styles"));
-    svr.Get(R"(/(.*))", [&](const httplib::Request& req, httplib::Response& res)
+
+    svr.Get("/", [&](const httplib::Request& req, httplib::Response& res)
+    {
+        std::filesystem::path filePath = options.web.fileServingDir;
+        filePath /= "index.html";
+
+        std::string content;
+        readFile(filePath, res, content);
+        res.set_content(content, "text/html");
+    });
+
+    svr.Get("/dashboard.html", [&](const httplib::Request& req, httplib::Response& res)
+    {
+        std::filesystem::path filePath = options.web.fileServingDir;
+        filePath /= "dashboard.html";
+
+        std::string content;
+        readFile(filePath, res, content);
+
+        if (req.params.contains("logs"))
+        {
+
+        }
+        else
+        {
+            std::stringstream data;
+            mongo.DumpClientInfo(clientId, data, "<br/>");
+
+            replaceStrInString(content, "${{TABLE_CONTENTS}}", "");
+        }
+
+        res.set_content(content, "text/html");
+    });
+
+    svr.Get("/api/protected", [&](const httplib::Request& req, httplib::Response& res)
     {
         const std::string auth_header = req.get_header_value("Authorization");
-        const std::string file = req.matches[1];
 
-       /* if (auth_header.empty() && file != "login.html")
+        if (auth_header.empty() || auth_header.substr(0, 7) != "Bearer ")
         {
-            res.status = 302;  // HTTP status code for redirection
-            res.set_header("Location", "/login.html");  // URL to redirect to
+            res.status = 401;
+            res.set_content("Authorization required", "text/plain");
+            return;
         }
-        else */if (req.path == "/protected")
+
+        std::string token = auth_header.substr(7); // Remove "Bearer " prefix
+        if (!token.empty())
         {
-            if (auth_header.empty() || auth_header.substr(0, 7) != "Bearer ") 
-            {
-                res.status = 401;
-                res.set_content("Authorization required", "text/plain");
-                return;
-            }
+            jwt::decoded_jwt decoded = jwt::decode(token);
+            jwt::verifier verifier = jwt::verify().allow_algorithm(jwt::algorithm::hs256{ options.identity }).with_issuer("auth_server");
 
-            std::string token = auth_header.substr(7); // Remove "Bearer " prefix
-            if (!token.empty()) 
-            {
-                jwt::decoded_jwt decoded = jwt::decode(token);
-                jwt::verifier verifier = jwt::verify().allow_algorithm(jwt::algorithm::hs256{ options.identity }).with_issuer("auth_server");
+            std::error_code error;
+            verifier.verify(decoded, error);
 
+            if (!error)
+            {
                 res.set_content("Access granted to protected resource", "text/plain");
             }
-            else 
+            else
             {
                 res.status = 403;
                 res.set_content("Invalid token", "text/plain");
@@ -101,25 +145,30 @@ int main(int argc, char** argv)
         }
         else
         {
-            std::string token = !auth_header.empty() ? auth_header.substr(7) : ""; // Remove "Bearer " prefix
-            if (req.path == "/")
-            {
-                std::filesystem::path filePath = options.web.fileServingDir;
-                filePath /= "index.html";
-
-                readFile(filePath, res);
-            }
-            else
-            {
-                std::filesystem::path filePath = options.web.fileServingDir;
-                filePath /= file;
-
-                readFile(filePath, res);
-            }
+            res.status = 403;
+            res.set_content("Invalid token", "text/plain");
         }
     });
-    
-    svr.Post("/login", [&options](const httplib::Request& req, httplib::Response& res) 
+
+    svr.Get(R"(/api/(.*))", [&](const httplib::Request& req, httplib::Response& res)
+    {
+        res.status = 200;
+        res.set_content("Invalid token", "text/plain");
+    });
+
+    svr.Get(R"(/(.*))", [&](const httplib::Request& req, httplib::Response& res)
+    {
+        const std::string file = req.matches[1];
+
+        std::filesystem::path filePath = options.web.fileServingDir;
+        filePath /= file;
+
+        std::string content;
+        readFile(filePath, res, content);
+        res.set_content(content, "text/html");
+    });
+
+    svr.Post("/api/login", [&options](const httplib::Request& req, httplib::Response& res) 
     {
         auto body = nlohmann::json::parse(req.body);
         std::string username = body["username"];

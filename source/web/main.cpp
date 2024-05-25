@@ -6,7 +6,6 @@
 #include <nlohmann/json.hpp>
 
 #include <filesystem>
-#include <format>
 
 bool readFile(std::filesystem::path& filePath, httplib::Response& res, std::string& content)
 {

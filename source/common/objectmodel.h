@@ -7,7 +7,7 @@ struct ConnectionInfo final
 {
     ConnectionInfo()
         : m_Connection(Type::Unknown)
-        , m_Time(std::chrono::high_resolution_clock::now().time_since_epoch().count())
+        , m_Time(std::chrono::system_clock::now().time_since_epoch().count())
     {
     }
 
@@ -35,5 +35,5 @@ struct ConnectionInfo final
         int m_ConnectionInteger;
     };
     std::string m_UniqueId;
-    std::chrono::high_resolution_clock::duration::rep m_Time;
+    std::chrono::system_clock ::duration::rep m_Time;
 };

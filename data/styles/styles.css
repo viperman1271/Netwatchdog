@@ -3,10 +3,14 @@ body {
   color: black;
 }
 
-.bg-login {
-  background-image: url('../images/background.jpeg');
+.bg-common {
+  background-image: url('/images/background.jpeg');
   background-size: cover;
   background-position: center;
+}
+
+.transition-width {
+  transition: width 0.3s;
 }
 
 /* Dark theme styles */

@@ -113,7 +113,6 @@ bool Mongo::DumpClientInfo(const std::string& clientInfo, std::stringstream& out
 
     mongocxx::collection collection = database[collectionStr.c_str()];
 
-
     std::function<mongocxx::cursor(const std::string&)> find = [&collection](const std::string& clientInfo)
     {
         if (!clientInfo.empty())

@@ -9,9 +9,9 @@
 using namespace std::chrono_literals;
 
 NetWatchdogServer::NetWatchdogServer(const Options& options)
-    : m_Port(options.port)
-    , m_ListenAddress(options.host)
-    , m_Identity(options.identity)
+    : m_Port(options.server.port)
+    , m_ListenAddress(options.server.host)
+    , m_Identity(options.server.identity)
     , m_ShouldContinue(true)
     , m_Database(options)
 {

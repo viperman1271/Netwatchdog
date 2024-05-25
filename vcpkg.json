@@ -1,15 +1,18 @@
 {
   "name": "netwatchdog",
   "version-string": "0.1.0",
-  "dependencies": [
-    "catch2",
-    "cereal",
-    "cli11",
-    "cpp-httplib",
-    "cppzmq",
-    "mongo-c-driver",
-    "mongo-cxx-driver",
-    "stduuid",
-    "toml11"
-  ]
+    "dependencies": [
+        "catch2",
+        "cereal",
+        "cli11",
+        "cpp-httplib",
+        "cppzmq",
+        "jwt-cpp",
+        "mongo-c-driver",
+        "mongo-cxx-driver",
+        "nlohmann-json",
+        "openssl",
+        "stduuid",
+        "toml11"
+    ]
 }

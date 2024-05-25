@@ -16,6 +16,12 @@
 
 namespace Config
 {
+    enum class ParsingType
+    {
+        Client,
+        Server,
+    };
+
     bool ValueExists(toml::value& config, const std::string& category, const std::string& variable);
     void ConfigureIfEnvVarNotEmpty(toml::value& config, const std::string& category, const std::string& variable, const std::string& envVariable);
     bool ValidateIdentity(toml::value& config, const std::string& category, const std::string& variable);
@@ -47,5 +53,5 @@ namespace Config
     }
 
     void LoadOrCreateConfig(Options& options);
-    bool ParseCommandLineOptions(int argc, char** argv, Options& options);
+    bool ParseCommandLineOptions(int argc, char** argv, Options& options, const ParsingType parsingType);
 };

@@ -76,10 +76,10 @@ namespace Config
         }
 
         ConfigureDefaultValue(config, "server", "host", "*");
-        ConfigureDefaultValue(config, "server", "port", options.port);
+        ConfigureDefaultValue(config, "server", "port", options.server.port);
 
         ConfigureDefaultValue(config, "client", "host", "localhost");
-        ConfigureDefaultValue(config, "client", "port", options.port);
+        ConfigureDefaultValue(config, "client", "port", options.client.port);
 
         ConfigureDefaultValue(config, "database", "username", "root");
         ConfigureDefaultValue(config, "database", "password", "password1234");
@@ -99,56 +99,51 @@ namespace Config
             ofs.close();
         }
 
-#ifdef NETWATCHDOG_SERVER
         ConfigureIfEnvVarNotEmpty(config, "database", "username", "MONGO_USERNAME");
         ConfigureIfEnvVarNotEmpty(config, "database", "password", "MONGO_PASSWORD");
         ConfigureIfEnvVarNotEmpty(config, "database", "host", "MONGO_HOST");
         ConfigureIfEnvVarNotEmpty(config, "database", "port", "MONGO_PORT");
-#endif // NETWATCHDOG_SERVER
 
-#ifdef NETWATCHDOG_CLIENT
-        constexpr const char* CATEGORY = "client";
-#elif defined(NETWATCHDOG_SERVER)
-        constexpr const char* CATEGORY = "server";
-#else
-        static_assert(false, "Platform unsupported");
-#endif // NETWATCHDOG_CLIENT / NETWATCHDOG_SERVER
+        options.client.host = toml::find<std::string>(config, "client", "host");
+        options.client.port = toml::find<int>(config, "client", "port");
+        options.client.identity = toml::find<std::string>(config, "client", "identity");
 
-        options.host = toml::find<std::string>(config, CATEGORY, "host");
-        options.port = toml::find<int>(config, CATEGORY, "port");
-        options.identity = toml::find<std::string>(config, CATEGORY, "identity");
+        options.client.host = toml::find<std::string>(config, "server", "host");
+        options.client.port = toml::find<int>(config, "server", "port");
+        options.client.identity = toml::find<std::string>(config, "server", "identity");
 
         options.web.fileServingDir = toml::find<std::string>(config, "web", "serving_dir");
         options.web.host = toml::find<std::string>(config, "web", "host");
         options.web.port = toml::find<int>(config, "web", "port");
 
-#ifdef NETWATCHDOG_SERVER
         options.database.username = toml::find<std::string>(config, "database", "username");
         options.database.password = toml::find<std::string>(config, "database", "password");
         options.database.host = toml::find<std::string>(config, "database", "host");
         options.database.port = toml::find<int>(config, "database", "port");
-#endif // NETWATCHDOG_SERVER
     }
 
-    bool ParseCommandLineOptions(int argc, char** argv, Options& options)
+    bool ParseCommandLineOptions(int argc, char** argv, Options& options, const ParsingType parsingType)
     {
         CLI::App app{ "NetWatchdog - ZeroMQ based network monitoring tool." };
 
-        app.add_option("-p,--port", options.port, "The port to use [defaults to 32000]");
-        app.add_option("-i,--identity", options.identity, "Identity");
-#ifdef NETWATCHDOG_CLIENT 
-        app.add_option("-c,--clientCount", options.clientCount, "Number of clients to spawn.");
-        app.add_option("--host", options.host, "Host to connect to");
-#elif defined(NETWATCHDOG_SERVER)
-        app.add_option("--host", options.host, "Listening address for the server [defaults to *]");
+        if (parsingType == ParsingType::Client)
+        {
+            app.add_option("-p,--port", options.client.port, "The port to use [defaults to 32000]");
+            app.add_option("-i,--identity", options.client.identity, "Identity");
+            app.add_option("--host", options.client.host, "Host to connect to");
+            app.add_option("-c,--clientCount", options.client.count, "Number of clients to spawn.");
+        }
+        else if (parsingType == ParsingType::Server)
+        {
+            app.add_option("-p,--port", options.server.port, "The port to use [defaults to 32000]");
+            app.add_option("-i,--identity", options.server.identity, "Identity");
+            app.add_option("--host", options.server.host, "Listening address for the server [defaults to *]");
 
-        app.add_option("--username", options.database.username, "Username for database access [defaults to root]");
-        app.add_option("--password", options.database.password, "Password for database access");
-        app.add_option("--db_host", options.database.host, "Database host address");
-        app.add_option("--db_port", options.database.port, "Database port [defaults to 27017]");
-#else
-        static_assert(false, "Platform unsupported");
-#endif // NETWATCHDOG_CLIENT / NETWATCHDOG_SERVER
+            app.add_option("--username", options.database.username, "Username for database access [defaults to root]");
+            app.add_option("--password", options.database.password, "Password for database access");
+            app.add_option("--db_host", options.database.host, "Database host address");
+            app.add_option("--db_port", options.database.port, "Database port [defaults to 27017]");
+        }
 
         try
         {

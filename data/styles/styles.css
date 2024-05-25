@@ -1,0 +1,22 @@
+body {
+  background-color: white;
+  color: black;
+}
+
+.bg-common {
+  background-image: url('/images/background.jpeg');
+  background-size: cover;
+  background-position: center;
+}
+
+.transition-width {
+  transition: width 0.3s;
+}
+
+/* Dark theme styles */
+@media (prefers-color-scheme: dark) {
+  body {
+    background-color: black;
+    color: white;
+  }
+}

@@ -27,7 +27,7 @@ int main(int argc, char** argv)
 {
     Options options;
     Config::LoadOrCreateConfig(options);
-    if (!Config::ParseCommandLineOptions(argc, argv, options))
+    if (!Config::ParseCommandLineOptions(argc, argv, options, Config::ParsingType::Server))
     {
         return -1;
     }

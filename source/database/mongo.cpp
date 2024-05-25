@@ -2,8 +2,10 @@
 
 #include "bson_utils.h"
 
-#include <mongocxx/exception/exception.hpp>
 #include <bsoncxx/builder/stream/document.hpp>
+#include <cereal/archives/json.hpp>
+#include <cereal/cereal.hpp>
+#include <mongocxx/exception/exception.hpp>
 
 #include <sstream>
 
@@ -56,7 +58,7 @@ bool Mongo::IsConnected() const
 void Mongo::AddConnectionInfo(ConnectionInfo& connInfo)
 {
     const std::string databaseStr = std::move(GetDatabaseName(Database::Stats));
-    const std::string collectionStr = std::move(GetCollectionName(Collection::ConnectionInfo));
+    const std::string collectionStr = std::move(GetCollectionName(Collection::Connection));
 
     mongocxx::database db = m_Client[databaseStr.c_str()];
     mongocxx::collection coll = db[collectionStr.c_str()];
@@ -105,14 +107,13 @@ bool Mongo::DumpClientInfo(const std::string& clientInfo, std::stringstream& out
 
     mongocxx::database database = m_Client[databaseStr.c_str()];
 
-    std::string collectionStr = GetCollectionName(Collection::ConnectionInfo);
+    std::string collectionStr = GetCollectionName(Collection::Connection);
     if (!CollectionExists(database, collectionStr))
     {
         return false;
     }
 
     mongocxx::collection collection = database[collectionStr.c_str()];
-
 
     std::function<mongocxx::cursor(const std::string&)> find = [&collection](const std::string& clientInfo)
     {
@@ -139,6 +140,196 @@ bool Mongo::DumpClientInfo(const std::string& clientInfo, std::stringstream& out
     return anyResults;
 }
 
+bool Mongo::FetchClientInfo(const std::string& clientId, std::vector<ConnectionInfo>& connInfo) const
+{
+    const std::string databaseStr = std::move(GetDatabaseName(Database::Stats));
+    if (!DatabaseExists(databaseStr))
+    {
+        return false;
+    }
+
+    mongocxx::database database = m_Client[databaseStr.c_str()];
+
+    std::string collectionStr = GetCollectionName(Collection::Connection);
+    if (!CollectionExists(database, collectionStr))
+    {
+        return false;
+    }
+
+    mongocxx::collection collection = database[collectionStr.c_str()];
+
+    std::function<mongocxx::cursor(const std::string&)> find = [&collection](const std::string& clientInfo)
+    {
+        if (!clientInfo.empty())
+        {
+            bsoncxx::builder::stream::document document{};
+            document << "unique-id" << clientInfo;
+
+            return collection.find(document.view());
+        }
+        else
+        {
+            return collection.find({});
+        }
+    };
+
+    mongocxx::cursor cursor = find(clientId);
+    const bool anyResults = cursor.begin() != cursor.end();
+    for (bsoncxx::document::view view : cursor)
+    {
+        const std::string json = Utils::BSON::ToJSON(view);
+        std::stringstream ss(json);
+        cereal::JSONInputArchive inputSerializer(ss);
+
+        ConnectionInfo info;
+        info.serialize(inputSerializer);
+
+        connInfo.push_back(std::move(info));
+    }
+
+    return anyResults;
+}
+
+void Mongo::DeleteInfo(Database db, Collection coll, const std::string& clientId)
+{
+    if (clientId.empty())
+    {
+        return;
+    }
+
+    const std::string databaseStr = std::move(GetDatabaseName(db));
+    if (!DatabaseExists(databaseStr))
+    {
+        return;
+    }
+
+    mongocxx::database database = m_Client[databaseStr.c_str()];
+
+    std::string collectionStr = GetCollectionName(coll);
+    if (!CollectionExists(database, collectionStr))
+    {
+        return;
+    }
+
+    mongocxx::collection collection = database[collectionStr.c_str()];
+
+    bsoncxx::builder::stream::document filter_builder;
+    filter_builder << "unique-id" << clientId;
+
+    mongocxx::stdx::optional<mongocxx::result::delete_result> result = collection.delete_many(filter_builder.view());
+}
+
+void Mongo::CreateUser(User& user)
+{
+    const std::string databaseStr = std::move(GetDatabaseName(Database::Meta));
+    const std::string collectionStr = std::move(GetCollectionName(Collection::User));
+
+    mongocxx::database db = m_Client[databaseStr.c_str()];
+    mongocxx::collection coll = db[collectionStr.c_str()];
+
+    bsoncxx::builder::stream::document document{};
+    user.serialize(document);
+
+    bsoncxx::document::value doc_value = document << bsoncxx::builder::stream::finalize;
+    coll.insert_one(doc_value.view());
+}
+
+bool Mongo::FetchUser(const std::string& username, User& user)
+{
+    if (username.empty())
+    {
+        return false;
+    }
+
+    const std::string databaseStr = std::move(GetDatabaseName(Database::Meta));
+    if (!DatabaseExists(databaseStr))
+    {
+        return false;
+    }
+
+    mongocxx::database database = m_Client[databaseStr.c_str()];
+
+    std::string collectionStr = GetCollectionName(Collection::User);
+    if (!CollectionExists(database, collectionStr))
+    {
+        return false;
+    }
+
+    mongocxx::collection collection = database[collectionStr.c_str()];
+
+    bsoncxx::builder::stream::document document;
+    document << "username" << username;
+
+    mongocxx::cursor cursor = collection.find(document.view());
+    const bool anyResults = cursor.begin() != cursor.end();
+    for (bsoncxx::document::view view : cursor)
+    {
+        const std::string json = Utils::BSON::ToJSON(view);
+        std::stringstream ss(json);
+        cereal::JSONInputArchive inputSerializer(ss);
+
+        user.serialize(inputSerializer);
+    }
+
+    return anyResults;
+}
+
+void Mongo::CreateApiKey(ApiKey& apiKey)
+{
+    const std::string databaseStr = std::move(GetDatabaseName(Database::Meta));
+    const std::string collectionStr = std::move(GetCollectionName(Collection::ApiKeys));
+
+    mongocxx::database db = m_Client[databaseStr.c_str()];
+    mongocxx::collection coll = db[collectionStr.c_str()];
+
+    bsoncxx::builder::stream::document document{};
+    apiKey.serialize(document);
+
+    bsoncxx::document::value doc_value = document << bsoncxx::builder::stream::finalize;
+    coll.insert_one(doc_value.view());
+}
+
+void Mongo::FetchApiKeys(const std::string& userId, std::vector<ApiKey>& apiKeys) const
+{
+    if (userId.empty())
+    {
+        return;
+    }
+
+    const std::string databaseStr = std::move(GetDatabaseName(Database::Meta));
+    if (!DatabaseExists(databaseStr))
+    {
+        return;
+    }
+
+    mongocxx::database database = m_Client[databaseStr.c_str()];
+
+    std::string collectionStr = GetCollectionName(Collection::ApiKeys);
+    if (!CollectionExists(database, collectionStr))
+    {
+        return;
+    }
+
+    mongocxx::collection collection = database[collectionStr.c_str()];
+
+    bsoncxx::builder::stream::document document;
+    document << "user" << userId;
+
+    mongocxx::cursor cursor = collection.find(document.view());
+    const bool anyResults = cursor.begin() != cursor.end();
+    for (bsoncxx::document::view view : cursor)
+    {
+        const std::string json = Utils::BSON::ToJSON(view);
+        std::stringstream ss(json);
+        cereal::JSONInputArchive inputSerializer(ss);
+
+        ApiKey apiKey;
+        apiKey.serialize(inputSerializer);
+
+        apiKeys.push_back(std::move(apiKey));
+    }
+}
+
 std::string Mongo::GetDatabaseName(Database database)
 {
     switch (database)
@@ -157,8 +348,14 @@ std::string Mongo::GetCollectionName(Collection collection)
 {
     switch (collection)
     {
-    case Collection::ConnectionInfo:
+    case Collection::Connection:
         return "conn-info";
+
+    case Collection::User:
+        return "user";
+
+    case Collection::ApiKeys:
+        return "api-keys";
     };
 
     return {};

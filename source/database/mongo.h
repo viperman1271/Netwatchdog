@@ -7,6 +7,8 @@
 #include <mongocxx/instance.hpp>
 #include <mongocxx/uri.hpp>
 
+#include <vector>
+
 class Mongo
 {
 public:
@@ -18,7 +20,9 @@ public:
 
     enum class Collection
     {
-        ConnectionInfo
+        Connection,
+        User,
+        ApiKeys,
     };
 
 public:
@@ -30,7 +34,15 @@ public:
 
     void AddConnectionInfo(ConnectionInfo& connInfo);
     void DumpInfo(Database database, Collection collection) const;
-    bool DumpClientInfo(const std::string& clientInfo, std::stringstream& outputStream, std::string lineEnd) const;
+    bool DumpClientInfo(const std::string& clientId, std::stringstream& outputStream, std::string lineEnd) const;
+    bool FetchClientInfo(const std::string& clientId, std::vector<ConnectionInfo>& connInfo) const;
+    void DeleteInfo(Database database, Collection collection, const std::string& clientId);
+
+    void CreateUser(User& user);
+    bool FetchUser(const std::string& username, User& user);
+
+    void CreateApiKey(ApiKey& apiKey);
+    void FetchApiKeys(const std::string& userId, std::vector<ApiKey>& apiKeys) const;
 
 private:
     static std::string GetDatabaseName(Database database);

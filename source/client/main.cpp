@@ -26,12 +26,12 @@ int main(int argc, char** argv)
 {
     Options options;
     Config::LoadOrCreateConfig(options);
-    if (!Config::ParseCommandLineOptions(argc, argv, options))
+    if (!Config::ParseCommandLineOptions(argc, argv, options, Config::ParsingType::Client))
     {
         return -1;
     }
 
-    if(options.clientCount > 1)
+    if(options.client.count > 1)
     {
         std::vector<std::unique_ptr<NetWatchdogClient>> clients;
 
@@ -43,11 +43,11 @@ int main(int argc, char** argv)
             }
         };
 
-        for (unsigned int i = 0; i < options.clientCount; ++i)
+        for (unsigned int i = 0; i < options.client.count; ++i)
         {
             std::stringstream ss;
-            ss << options.identity << i;
-            clients.push_back(std::unique_ptr<NetWatchdogClient>{ new NetWatchdogClient(options.host, ss.str(), options.port) });
+            ss << options.client.identity << i;
+            clients.push_back(std::unique_ptr<NetWatchdogClient>{ new NetWatchdogClient(options.client.host, ss.str(), options.client.port) });
             clients[i]->Run(true);
         }
 
@@ -58,7 +58,7 @@ int main(int argc, char** argv)
     }
     else
     {
-        NetWatchdogClient client(options.host, options.identity, options.port);
+        NetWatchdogClient client(options.client.host, options.client.identity, options.client.port);
 
         g_CallbackFunc = [&client]()
         {

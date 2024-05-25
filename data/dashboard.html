@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Netwatchdog - Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.10.2/font/bootstrap-icons.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <link href="/styles/styles.css" rel="stylesheet"/>
+
+    <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16.png">
+    <link rel="icon" type="image/x-icon" href="/images/favicon.ico">
+    <link rel="manifest" href="/images/site.webmanifest">
+</head>
+<body class="bg-common bg-gray-100">
+    <script src="/scripts/auth.js" type="text/javascript"></script>
+
+    <div class="min-h-screen flex">
+        <!-- Sidebar -->
+        <div id="sidebar" class="w-64 bg-gray-800 text-white flex flex-col transition-width">
+            <button id="toggleSidebar">
+                <div class="p-4 text-2xl font-bold flex items-center">
+                    <i class="fas fa-bars mr-2"></i>
+                    <span class="sidebar-text">Netwatchdog</span>
+                </div>
+            </button>
+            <nav class="flex-grow">
+                <ul>
+                    <a href="dashboard.html">
+                        <li class="p-4 hover:bg-gray-700 flex items-center">
+                            <i class="fas fa-home mr-2"></i>
+                            <span class="sidebar-text">Home</span>
+                        </li>
+                    </a>
+                    <a href="?clients">
+                        <li class="p-4 hover:bg-gray-700 flex items-center">
+                            <i class="fas fa-users mr-2"></i>
+                            <span class="sidebar-text">Clients</span>
+                        </li>
+                    </a>
+                    <a href="?api-keys">
+                        <li class="p-4 hover:bg-gray-700 flex items-center">
+                            <i class="fas fa-key mr-2"></i>
+                            <span class="sidebar-text">API Keys</span>
+                        </li>
+                    </a>
+                    <a href="?logs">
+                        <li class="p-4 hover:bg-gray-700 flex items-center">
+                            <i class="bi bi-bar-chart mr-2"></i>
+                            <span class="sidebar-text">Logs</span>
+                        </li>
+                    </a>
+                    <a href="?profile">
+                        <li class="p-4 hover:bg-gray-700 flex items-center">
+                            <i class="fas fa-user mr-2"></i>
+                            <span class="sidebar-text">Profile</span>
+                        </li>
+                    </a>
+                </ul>
+            </nav>
+            <button id="toggleSidebarBottom" class="bg-gray-700 text-white p-2 m-4 flex items-center justify-center">
+                <i class="fas fa-arrow-left"></i> <span class="sidebar-text">Collapse</span>
+            </button>
+        </div>
+
+        <!-- Main Content -->
+        <div class="flex-grow p-6">
+            <div class="max-w-6xl mx-auto">
+                <div class="bg-gray shadow-md rounded p-4">
+                    <h2 class="text-lg font-semibold mb-4">${{TABLE_HEADER}}</h2>
+                        <div class="h-96 overflow-y-auto shadow-4xl">
+                            <div class="h-96">
+                                <table id="dataTable" class="min-w-full bg-white border border-gray-200">
+                                    ${{TABLE_CONTENTS}}
+                                </table>
+
+                                <form id="clear-form" class="" method="post" action="/api/client-info/clear">
+                                    <button id="clearItems" class="bg-gray-700 text-white p-2 m-4 flex items-center justify-center">
+                                        Clear
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('toggleSidebarBottom').addEventListener('click', function() {
+            const sidebar = document.getElementById('sidebar');
+            sidebar.classList.toggle('w-64');
+            sidebar.classList.toggle('w-16');
+
+            // Toggle visibility of text elements
+            const sidebarTextElements = document.querySelectorAll('.sidebar-text');
+            sidebarTextElements.forEach(element => {
+                element.classList.toggle('hidden');
+            });
+
+            // Toggle icon direction
+            const toggleIcon = document.querySelector('#toggleSidebarBottom i');
+            if (sidebar.classList.contains('w-64')) {
+                toggleIcon.classList.remove('fa-arrow-right');
+                toggleIcon.classList.add('fa-arrow-left');
+            } else {
+                toggleIcon.classList.remove('fa-arrow-left');
+                toggleIcon.classList.add('fa-arrow-right');
+            }
+        });
+
+        document.getElementById('toggleSidebar').addEventListener('click', function() {
+            const sidebar = document.getElementById('sidebar');
+            sidebar.classList.toggle('w-64');
+            sidebar.classList.toggle('w-16');
+
+            // Toggle visibility of text elements
+            const sidebarTextElements = document.querySelectorAll('.sidebar-text');
+            sidebarTextElements.forEach(element => {
+                element.classList.toggle('hidden');
+            });
+        });
+
+        document.getElementById('clear-form').addEventListener('submit', function(event) {
+          event.preventDefault();
+
+          const queryString = window.location.search;
+          const urlParams = new URLSearchParams(queryString);
+          const clientId = urlParams.get('clientId')
+
+          var xhr = new XMLHttpRequest();
+          xhr.open('POST', '/api/client-info/clear', true);
+          xhr.setRequestHeader('Content-Type', 'application/json;charset=UTF-8');
+
+          var data = JSON.stringify({
+              clientId: clientId
+          });
+
+          xhr.send(data);
+          location.reload();
+      });
+    </script>
+
+</body>
+</html>

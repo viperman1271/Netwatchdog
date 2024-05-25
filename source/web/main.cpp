@@ -58,7 +58,7 @@ enum class TokenResult
     Invalid,
 };
 
-TokenResult validateToken(const Options& options, const httplib::Request& req)
+TokenResult validateToken(Mongo& mongo, const Options& options, const httplib::Request& req)
 {
     const std::string auth_header = req.get_header_value("Authorization");
 
@@ -76,6 +76,29 @@ TokenResult validateToken(const Options& options, const httplib::Request& req)
         std::error_code error;
         verifier.verify(decoded, error);
 
+        if (!decoded.has_payload_claim("username"))
+        {
+            return TokenResult::Invalid;
+        }
+        jwt::claim usernameClaim = decoded.get_payload_claim("username");
+
+        User user;
+        if (!mongo.FetchUser(usernameClaim.as_string(), user))
+        {
+            return TokenResult::Invalid;
+        }
+
+        if (!decoded.has_payload_claim("expiry"))
+        {
+            return TokenResult::Invalid;
+        }
+
+        jwt::claim expiryClaim = decoded.get_payload_claim("expiry");
+        if (expiryClaim.as_date() < std::chrono::system_clock::now())
+        {
+            return TokenResult::Invalid;
+        }
+
         if (!error)
         {
             return TokenResult::Correct;
@@ -85,9 +108,9 @@ TokenResult validateToken(const Options& options, const httplib::Request& req)
     return TokenResult::Invalid;
 }
 
-bool validateToken(const Options& options, const httplib::Request& req, httplib::Response& res)
+bool validateToken(Mongo& mongo, const Options& options, const httplib::Request& req, httplib::Response& res)
 {
-    switch (validateToken(options, req))
+    switch (validateToken(mongo, options, req))
     {
     case TokenResult::Correct:
         res.status = 200;
@@ -134,10 +157,12 @@ int main(int argc, char** argv)
         return -1;
     }
 
-    Mongo mongo(options);
-    if (!mongo.IsConnected())
     {
-        return -1;
+        Mongo mongo(options);
+        if (!mongo.IsConnected())
+        {
+            return -1;
+        }
     }
 
     httplib::Server svr;
@@ -190,6 +215,7 @@ int main(int argc, char** argv)
             }
 
             std::vector<ConnectionInfo> connInfos;
+            Mongo mongo(options);
             mongo.FetchClientInfo(clientId, connInfos);
 
             const std::string baseIndent = "                                    ";
@@ -231,7 +257,8 @@ int main(int argc, char** argv)
 
     svr.Get("/api/protected", [&](const httplib::Request& req, httplib::Response& res)
     {
-        validateToken(options, req, res);
+        Mongo mongo(options);
+        validateToken(mongo, options, req, res);
     });
 
     svr.Get(R"(/api/(.*))", [&](const httplib::Request& req, httplib::Response& res)
@@ -258,10 +285,14 @@ int main(int argc, char** argv)
         std::string username = body["username"];
         std::string password = body["password"];
 
-        if (username == "asdf" && password == "asdf") 
+        Mongo mongo(options);
+
+        User user;
+        if(mongo.FetchUser(username, user) && user.ValidatePassword(password))
         {
-            // Generate JWT
-            const std::string token = jwt::create().set_issuer("auth_server").set_type("JWS").set_payload_claim("username", jwt::claim(username)).sign(jwt::algorithm::hs256{ options.server.identity });
+            const std::chrono::system_clock::time_point timepoint = std::chrono::system_clock::now() + std::chrono::days(30);
+
+            const std::string token = jwt::create().set_issuer("auth_server").set_type("JWS").set_payload_claim("username", jwt::claim(username)).set_payload_claim("expiry", jwt::claim(timepoint)).sign(jwt::algorithm::hs256{options.server.identity});
 
             nlohmann::json response = { {"token", token} };
             res.set_content(response.dump(), "application/json");
@@ -273,11 +304,12 @@ int main(int argc, char** argv)
         }
     });
 
-    svr.Post("/api/client-info/clear", [&mongo](const httplib::Request& req, httplib::Response& res) 
+    svr.Post("/api/client-info/clear", [&options](const httplib::Request& req, httplib::Response& res) 
     {
         auto body = nlohmann::json::parse(req.body);
         std::string clientId = body["clientId"];
 
+        Mongo mongo(options);
         mongo.DeleteInfo(Mongo::Database::Stats, Mongo::Collection::Connection, clientId);
     });
 

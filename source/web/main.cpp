@@ -55,7 +55,7 @@ int main(int argc, char** argv)
 {
     Options options;
     Config::LoadOrCreateConfig(options);
-    if (!Config::ParseCommandLineOptions(argc, argv, options))
+    if (!Config::ParseCommandLineOptions(argc, argv, options, Config::ParsingType::Server))
     {
         return -1;
     }
@@ -104,8 +104,8 @@ int main(int argc, char** argv)
         }
         else
         {
-            std::stringstream data;
-            mongo.DumpClientInfo(clientId, data, "<br/>");
+//             std::stringstream data;
+//             mongo.DumpClientInfo(clientId, data, "<br/>");
 
             replaceStrInString(content, "${{TABLE_CONTENTS}}", "");
         }
@@ -128,7 +128,7 @@ int main(int argc, char** argv)
         if (!token.empty())
         {
             jwt::decoded_jwt decoded = jwt::decode(token);
-            jwt::verifier verifier = jwt::verify().allow_algorithm(jwt::algorithm::hs256{ options.identity }).with_issuer("auth_server");
+            jwt::verifier verifier = jwt::verify().allow_algorithm(jwt::algorithm::hs256{ options.server.identity }).with_issuer("auth_server");
 
             std::error_code error;
             verifier.verify(decoded, error);
@@ -177,7 +177,7 @@ int main(int argc, char** argv)
         if (username == "asdf" && password == "asdf") 
         {
             // Generate JWT
-            const std::string token = jwt::create().set_issuer("auth_server").set_type("JWS").set_payload_claim("username", jwt::claim(username)).sign(jwt::algorithm::hs256{ options.identity });
+            const std::string token = jwt::create().set_issuer("auth_server").set_type("JWS").set_payload_claim("username", jwt::claim(username)).sign(jwt::algorithm::hs256{ options.server.identity });
 
             nlohmann::json response = { {"token", token} };
             res.set_content(response.dump(), "application/json");

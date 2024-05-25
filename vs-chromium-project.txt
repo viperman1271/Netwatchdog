@@ -6,7 +6,7 @@
 .git*
 *.suo
 bin/
-build/
+build*/
 *.txt
 *.md
 *.sh

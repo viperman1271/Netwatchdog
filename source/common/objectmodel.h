@@ -47,19 +47,24 @@ struct User final
     template<class TSerializer>
     void serialize(TSerializer& serializer)
     {
-        serializer(cereal::make_nvp("id", m_Id), cereal::make_nvp("email-address", m_EmailAddress), cereal::make_nvp("username", m_Username), cereal::make_nvp("password", m_Password), cereal::make_nvp("salt", m_Salt));
+        serializer(cereal::make_nvp("id", m_Id), cereal::make_nvp("email-address", m_EmailAddress), cereal::make_nvp("username", m_Username), cereal::make_nvp("password", m_Password));
     }
 
     void serialize(bsoncxx::builder::stream::document& document)
     {
-        document << "id" << m_Id << "email-address" << m_EmailAddress.c_str() << "username" << m_Username.c_str() << "password" << m_Password << "salt" << m_Salt;
+        document << "id" << m_Id << "email-address" << m_EmailAddress.c_str() << "username" << m_Username.c_str() << "password" << m_Password;
     }
+
+    bool ValidatePassword(const std::string& unhashedPassword) const;
+
+    void SetPassword(const std::string& password);
 
     std::string m_Id;
     std::string m_EmailAddress;
     std::string m_Username;
+
+private:
     std::string m_Password;
-    std::string m_Salt;
 };
 
 struct ApiKey final
@@ -69,7 +74,7 @@ struct ApiKey final
         , m_Expiration(std::numeric_limits<std::chrono::system_clock::rep>::max())
         , m_Permissions(Type::None)
     {
-        generate();
+        Generate();
     }
 
     enum class Type : unsigned int
@@ -97,21 +102,7 @@ struct ApiKey final
         document << "user" << m_User.c_str() << "api-key" << m_ApiKey.c_str() << "creation" << m_CreationTime << "expiration" << m_Expiration << "permissions" << m_PermissionsInteger;
     }
 
-    void generate()
-    {
-        constexpr unsigned int API_KEY_LENGTH = 32;
-
-        const std::string characters = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
-
-        std::uniform_int_distribution<> distribution(0, static_cast<unsigned int>(characters.size() - 1));
-
-        m_ApiKey.clear();
-
-        for (unsigned int i = 0; i < API_KEY_LENGTH; ++i)
-        {
-            m_ApiKey += characters[distribution(g_RNG)];
-        }
-    }
+    void Generate();
 
     std::string m_User;
     std::string m_ApiKey;

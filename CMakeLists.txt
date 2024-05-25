@@ -7,6 +7,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 include_directories(${CMAKE_SOURCE_DIR}/source/client)
 include_directories(${CMAKE_SOURCE_DIR}/source/server)
+include_directories(${CMAKE_SOURCE_DIR}/extern/libbcrypt/include)
 
 # Set the output directory for executables
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/../bin)
@@ -34,6 +35,8 @@ enable_testing()
 include(CTest)
 include(Catch)
 
+add_subdirectory("extern/libbcrypt")
+
 # Common library
 set(NETWATCHDOG_COMMON_SRC_DIR ${CMAKE_SOURCE_DIR}/source/common)
 set(NETWATCHDOG_DATABASE_SRC_DIR ${CMAKE_SOURCE_DIR}/source/database)
@@ -46,7 +49,7 @@ file(GLOB LIBNETWATCHDOG_SOURCES ${NETWATCHDOG_COMMON_SRC_DIR}/*.*)
 file(GLOB NETWATCHDOG_DATABASE_SOURCES ${NETWATCHDOG_DATABASE_SRC_DIR}/*.*)
 
 add_library(libnetwatchdog ${LIBNETWATCHDOG_SOURCES} ${NETWATCHDOG_DATABASE_SOURCES})
-target_link_libraries(libnetwatchdog CLI11::CLI11 ${BSONCXX_LIB} ${MONGOC_LIB} ${MONGOCXXLIB})
+target_link_libraries(libnetwatchdog CLI11::CLI11 ${BSONCXX_LIB} ${MONGOC_LIB} ${MONGOCXXLIB} bcrypt)
 
 include_directories(${NETWATCHDOG_DATABASE_SRC_DIR})
 

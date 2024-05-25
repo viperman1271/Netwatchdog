@@ -39,7 +39,10 @@ public:
     void DeleteInfo(Database database, Collection collection, const std::string& clientId);
 
     void CreateUser(User& user);
+    bool FetchUser(const std::string& username, User& user);
+
     void CreateApiKey(ApiKey& apiKey);
+    void FetchApiKeys(const std::string& userId, std::vector<ApiKey>& apiKeys) const;
 
 private:
     static std::string GetDatabaseName(Database database);

@@ -234,6 +234,46 @@ void Mongo::CreateUser(User& user)
     coll.insert_one(doc_value.view());
 }
 
+bool Mongo::FetchUser(const std::string& username, User& user)
+{
+    if (username.empty())
+    {
+        return false;
+    }
+
+    const std::string databaseStr = std::move(GetDatabaseName(Database::Meta));
+    if (!DatabaseExists(databaseStr))
+    {
+        return false;
+    }
+
+    mongocxx::database database = m_Client[databaseStr.c_str()];
+
+    std::string collectionStr = GetCollectionName(Collection::User);
+    if (!CollectionExists(database, collectionStr))
+    {
+        return false;
+    }
+
+    mongocxx::collection collection = database[collectionStr.c_str()];
+
+    bsoncxx::builder::stream::document document;
+    document << "username" << username;
+
+    mongocxx::cursor cursor = collection.find(document.view());
+    const bool anyResults = cursor.begin() != cursor.end();
+    for (bsoncxx::document::view view : cursor)
+    {
+        const std::string json = Utils::BSON::ToJSON(view);
+        std::stringstream ss(json);
+        cereal::JSONInputArchive inputSerializer(ss);
+
+        user.serialize(inputSerializer);
+    }
+
+    return anyResults;
+}
+
 void Mongo::CreateApiKey(ApiKey& apiKey)
 {
     const std::string databaseStr = std::move(GetDatabaseName(Database::Meta));
@@ -247,6 +287,47 @@ void Mongo::CreateApiKey(ApiKey& apiKey)
 
     bsoncxx::document::value doc_value = document << bsoncxx::builder::stream::finalize;
     coll.insert_one(doc_value.view());
+}
+
+void Mongo::FetchApiKeys(const std::string& userId, std::vector<ApiKey>& apiKeys) const
+{
+    if (userId.empty())
+    {
+        return;
+    }
+
+    const std::string databaseStr = std::move(GetDatabaseName(Database::Meta));
+    if (!DatabaseExists(databaseStr))
+    {
+        return;
+    }
+
+    mongocxx::database database = m_Client[databaseStr.c_str()];
+
+    std::string collectionStr = GetCollectionName(Collection::ApiKeys);
+    if (!CollectionExists(database, collectionStr))
+    {
+        return;
+    }
+
+    mongocxx::collection collection = database[collectionStr.c_str()];
+
+    bsoncxx::builder::stream::document document;
+    document << "user" << userId;
+
+    mongocxx::cursor cursor = collection.find(document.view());
+    const bool anyResults = cursor.begin() != cursor.end();
+    for (bsoncxx::document::view view : cursor)
+    {
+        const std::string json = Utils::BSON::ToJSON(view);
+        std::stringstream ss(json);
+        cereal::JSONInputArchive inputSerializer(ss);
+
+        ApiKey apiKey;
+        apiKey.serialize(inputSerializer);
+
+        apiKeys.push_back(std::move(apiKey));
+    }
 }
 
 std::string Mongo::GetDatabaseName(Database database)

@@ -2,8 +2,10 @@
 
 #include "bson_utils.h"
 
-#include <mongocxx/exception/exception.hpp>
 #include <bsoncxx/builder/stream/document.hpp>
+#include <cereal/archives/json.hpp>
+#include <cereal/cereal.hpp>
+#include <mongocxx/exception/exception.hpp>
 
 #include <sstream>
 
@@ -136,6 +138,85 @@ bool Mongo::DumpClientInfo(const std::string& clientInfo, std::stringstream& out
     }
 
     return anyResults;
+}
+
+bool Mongo::FetchClientInfo(const std::string& clientId, std::vector<ConnectionInfo>& connInfo) const
+{
+    const std::string databaseStr = std::move(GetDatabaseName(Database::Stats));
+    if (!DatabaseExists(databaseStr))
+    {
+        return false;
+    }
+
+    mongocxx::database database = m_Client[databaseStr.c_str()];
+
+    std::string collectionStr = GetCollectionName(Collection::ConnectionInfo);
+    if (!CollectionExists(database, collectionStr))
+    {
+        return false;
+    }
+
+    mongocxx::collection collection = database[collectionStr.c_str()];
+
+    std::function<mongocxx::cursor(const std::string&)> find = [&collection](const std::string& clientInfo)
+    {
+        if (!clientInfo.empty())
+        {
+            bsoncxx::builder::stream::document document{};
+            document << "unique-id" << clientInfo;
+
+            return collection.find(document.view());
+        }
+        else
+        {
+            return collection.find({});
+        }
+    };
+
+    mongocxx::cursor cursor = find(clientId);
+    const bool anyResults = cursor.begin() != cursor.end();
+    for (bsoncxx::document::view view : cursor)
+    {
+        const std::string json = Utils::BSON::ToJSON(view);
+        std::stringstream ss(json);
+        cereal::JSONInputArchive inputSerializer(ss);
+
+        ConnectionInfo info;
+        info.serialize(inputSerializer);
+
+        connInfo.push_back(std::move(info));
+    }
+
+    return anyResults;
+}
+
+void Mongo::DeleteInfo(Database db, Collection coll, const std::string& clientId)
+{
+    if (clientId.empty())
+    {
+        return;
+    }
+
+    const std::string databaseStr = std::move(GetDatabaseName(db));
+    if (!DatabaseExists(databaseStr))
+    {
+        return;
+    }
+
+    mongocxx::database database = m_Client[databaseStr.c_str()];
+
+    std::string collectionStr = GetCollectionName(coll);
+    if (!CollectionExists(database, collectionStr))
+    {
+        return;
+    }
+
+    mongocxx::collection collection = database[collectionStr.c_str()];
+
+    bsoncxx::builder::stream::document filter_builder;
+    filter_builder << "unique-id" << clientId;
+
+    mongocxx::stdx::optional<mongocxx::result::delete_result> result = collection.delete_many(filter_builder.view());
 }
 
 std::string Mongo::GetDatabaseName(Database database)

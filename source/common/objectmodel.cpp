@@ -1,8 +1,15 @@
 #include "objectmodel.h"
 
 #include <bcrypt/bcrypt.hpp>
+#include <stduuid/uuid.h>
 
 constexpr int WORKLOAD = 12;
+
+User::User()
+    : m_IsAdmin(false)
+    , m_Id(uuids::to_string(uuids::uuid_random_generator(g_RNG)()))
+{
+}
 
 bool User::ValidatePassword(const std::string& unhashedPassword) const
 {

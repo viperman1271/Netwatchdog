@@ -44,21 +44,24 @@ struct ConnectionInfo final
 
 struct User final
 {
+    User();
+
     template<class TSerializer>
     void serialize(TSerializer& serializer)
     {
-        serializer(cereal::make_nvp("id", m_Id), cereal::make_nvp("email-address", m_EmailAddress), cereal::make_nvp("username", m_Username), cereal::make_nvp("password", m_Password));
+        serializer(cereal::make_nvp("id", m_Id), cereal::make_nvp("email-address", m_EmailAddress), cereal::make_nvp("username", m_Username), cereal::make_nvp("password", m_Password), cereal::make_nvp("admin", m_IsAdmin));
     }
 
     void serialize(bsoncxx::builder::stream::document& document)
     {
-        document << "id" << m_Id << "email-address" << m_EmailAddress.c_str() << "username" << m_Username.c_str() << "password" << m_Password;
+        document << "id" << m_Id << "email-address" << m_EmailAddress.c_str() << "username" << m_Username.c_str() << "password" << m_Password << "admin" << m_IsAdmin;
     }
 
     bool ValidatePassword(const std::string& unhashedPassword) const;
 
     void SetPassword(const std::string& password);
 
+    bool m_IsAdmin;
     std::string m_Id;
     std::string m_EmailAddress;
     std::string m_Username;
@@ -79,16 +82,17 @@ struct ApiKey final
 
     enum class Type : unsigned int
     {
-        None                = 0b000000,
+        None                = 0b0000000,
 
-        ConnectionInfoRead  = 0b000001,
-        ConnecitonInfoWrite = 0b000010,
-        ApiKeyRead          = 0b000100,
-        ApiKeyWrite         = 0b001000,
-        ProfileRead         = 0b010000,
-        ProfileUpdate       = 0b100000,
+        ConnectionInfoRead  = 0b0000001,
+        ConnecitonInfoWrite = 0b0000010,
+        ApiKeyRead          = 0b0000100,
+        ApiKeyWrite         = 0b0001000,
+        ProfileRead         = 0b0010000,
+        ProfileUpdate       = 0b0100000,
+        Administration      = 0b1000000,
 
-        All                 = ConnectionInfoRead | ConnecitonInfoWrite | ApiKeyRead | ApiKeyWrite | ProfileRead | ProfileUpdate,
+        All                 = ConnectionInfoRead | ConnecitonInfoWrite | ApiKeyRead | ApiKeyWrite | ProfileRead | ProfileUpdate | Administration,
     };
 
     template<class TSerializer>

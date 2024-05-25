@@ -90,6 +90,8 @@ namespace Config
         ConfigureDefaultValue(config, "web", "port", 8000);
         ConfigureDefaultValue(config, "web", "serving_dir", Utils::GetBasePath().string());
 
+        ConfigureDefaultValue(config, "admin", "direct", false);
+
         if (!configFileExists)
         {
             std::cout << "Configuration file [" << configPath.string() << "] not found... creating." << std::endl;
@@ -120,6 +122,8 @@ namespace Config
         options.database.password = toml::find<std::string>(config, "database", "password");
         options.database.host = toml::find<std::string>(config, "database", "host");
         options.database.port = toml::find<int>(config, "database", "port");
+
+        options.admin.direct = toml::find<bool>(config, "admin", "direct");
     }
 
     bool ParseCommandLineOptions(int argc, char** argv, Options& options, const ParsingType parsingType)
@@ -133,7 +137,7 @@ namespace Config
             app.add_option("--host", options.client.host, "Host to connect to");
             app.add_option("-c,--clientCount", options.client.count, "Number of clients to spawn.");
         }
-        else if (parsingType == ParsingType::Server)
+        else if (parsingType == ParsingType::Server || parsingType == ParsingType::Admin)
         {
             app.add_option("-p,--port", options.server.port, "The port to use [defaults to 32000]");
             app.add_option("-i,--identity", options.server.identity, "Identity");
@@ -143,6 +147,14 @@ namespace Config
             app.add_option("--password", options.database.password, "Password for database access");
             app.add_option("--db_host", options.database.host, "Database host address");
             app.add_option("--db_port", options.database.port, "Database port [defaults to 27017]");
+        }
+
+        if (parsingType == ParsingType::Admin)
+        {
+            app.add_flag("--direct", options.admin.direct, "Whether or not the connection should be directly to the database.");
+            app.add_option("-c,--create_user", options.admin.userToCreate, "Username of the user to create");
+            app.add_option("--user_password", options.admin.userPassword, "Password of the user to create");
+            app.add_flag("--user_is_admin", options.admin.userIsAdmin, "Whether or not the user should be an admin.");
         }
 
         try

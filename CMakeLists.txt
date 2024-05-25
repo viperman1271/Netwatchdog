@@ -49,7 +49,7 @@ file(GLOB LIBNETWATCHDOG_SOURCES ${NETWATCHDOG_COMMON_SRC_DIR}/*.*)
 file(GLOB NETWATCHDOG_DATABASE_SOURCES ${NETWATCHDOG_DATABASE_SRC_DIR}/*.*)
 
 add_library(libnetwatchdog ${LIBNETWATCHDOG_SOURCES} ${NETWATCHDOG_DATABASE_SOURCES})
-target_link_libraries(libnetwatchdog CLI11::CLI11 ${BSONCXX_LIB} ${MONGOC_LIB} ${MONGOCXXLIB} bcrypt)
+target_link_libraries(libnetwatchdog CLI11::CLI11 ${BSONCXX_LIB} ${MONGOC_LIB} ${MONGOCXXLIB} bcrypt stduuid)
 
 include_directories(${NETWATCHDOG_DATABASE_SRC_DIR})
 
@@ -73,7 +73,7 @@ include_directories(${NETWATCHDOGD_SRC_DIR} ${NETWATCHDOG_COMMON_SRC_DIR})
 file(GLOB NETWATCHDOGD_SOURCES ${NETWATCHDOGD_SRC_DIR}/*.*)
 
 add_executable(netwatchdogd ${NETWATCHDOGD_SOURCES})
-target_link_libraries(netwatchdogd PRIVATE libnetwatchdog cereal::cereal cppzmq stduuid toml11::toml11)
+target_link_libraries(netwatchdogd PRIVATE libnetwatchdog cereal::cereal cppzmq toml11::toml11)
 target_compile_definitions(netwatchdogd PRIVATE NETWATCHDOG_SERVER)
 
 # Web server
@@ -85,13 +85,25 @@ file(GLOB NETWATCHDOG_WEB_SOURCES ${NETWATCHDOG_WEB_SRC_DIR}/*.*)
 
 add_executable(web ${NETWATCHDOG_WEB_SOURCES})
 target_compile_definitions(web PRIVATE NETWATCHDOG_SERVER)
-target_link_libraries(web PRIVATE libnetwatchdog stduuid httplib::httplib nlohmann_json::nlohmann_json OpenSSL::SSL OpenSSL::Crypto)
+target_link_libraries(web PRIVATE libnetwatchdog httplib::httplib nlohmann_json::nlohmann_json OpenSSL::SSL OpenSSL::Crypto)
 
+# Admin executable
+set(NETWATCHDOG_ADMIN_SRC_DIR ${CMAKE_SOURCE_DIR}/source/admin)
+
+include_directories(${NETWATCHDOG_ADMIN_SRC_DIR})
+
+file(GLOB NETWATCHDOG_ADMIN_SOURCES ${NETWATCHDOG_ADMIN_SRC_DIR}/*.*)
+
+add_executable(admin ${NETWATCHDOG_ADMIN_SOURCES})
+target_link_libraries(admin PRIVATE libnetwatchdog httplib::httplib nlohmann_json::nlohmann_json)
+
+# Visual Studio directories
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 set_target_properties(libnetwatchdog PROPERTIES FOLDER "netwatchdog")
 set_target_properties(netwatchdogc PROPERTIES FOLDER "netwatchdog")
 set_target_properties(netwatchdogd PROPERTIES FOLDER "netwatchdog")
 set_target_properties(web PROPERTIES FOLDER "netwatchdog")
+set_target_properties(admin PROPERTIES FOLDER "netwatchdog")
 set_target_properties(libwatchdog_tests PROPERTIES FOLDER "netwatchdog/tests")
 
 # Add tests

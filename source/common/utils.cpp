@@ -88,4 +88,14 @@ namespace Utils
         SetThreadDescription(GetCurrentThread(), std::wstring(name.begin(), name.end()).c_str());
 #endif
     }
+
+    void ReplaceStrInString(std::string& baseString, const std::string& strToFind, const std::string& strToReplaceFoundStr)
+    {
+        size_t pos = 0;
+        while ((pos = baseString.find(strToFind, pos)) != std::string::npos)
+        {
+            baseString.replace(pos, strToFind.length(), strToReplaceFoundStr);
+            pos += strToReplaceFoundStr.length();
+        }
+    }
 }

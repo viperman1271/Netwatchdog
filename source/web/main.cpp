@@ -1,5 +1,6 @@
 #include "config.h"
 #include "mongo.h"
+#include "web-template.h"
 
 #include <jwt-cpp/jwt.h>
 #include <httplib.h>
@@ -39,16 +40,6 @@ bool readFile(std::filesystem::path& filePath, httplib::Response& res, std::stri
     }
 
     return false;
-}
-
-void replaceStrInString(std::string& baseString, const std::string& strToFind, const std::string& strToReplaceFoundStr) 
-{
-    size_t pos = 0;
-    while ((pos = baseString.find(strToFind, pos)) != std::string::npos) 
-    {
-        baseString.replace(pos, strToFind.length(), strToReplaceFoundStr);
-        pos += strToReplaceFoundStr.length();
-    }
 }
 
 enum class TokenResult
@@ -189,6 +180,19 @@ int main(int argc, char** argv)
         res.set_content(content, "text/html");
     });
 
+    std::function<std::filesystem::path(const std::string&)> templateFunc = [&options](const std::string& templateName)
+    {
+        std::filesystem::path fileServingDir = options.web.fileServingDir;
+        fileServingDir /= "templates";
+        fileServingDir /= templateName;
+        return fileServingDir;
+    };
+
+    WebTemplate tbody(templateFunc("tbody.template"));
+    WebTemplate thead(templateFunc("thead.template"));
+    WebTemplate thead_tr(templateFunc("thead-tr.template"));
+    WebTemplate thead_tr_th(templateFunc("thead-tr-th.template"));
+
     svr.Get("/dashboard.html", [&](const httplib::Request& req, httplib::Response& res)
     {
         std::filesystem::path filePath = options.web.fileServingDir;
@@ -206,7 +210,7 @@ int main(int argc, char** argv)
 
         if (req.params.contains("logs"))
         {
-            replaceStrInString(content, "${{TABLE_HEADER}}", "Connection Logs");
+            Utils::ReplaceStrInString(content, "${{TABLE_HEADER}}", "Connection Logs");
 
             std::string clientId{};
             if (req.params.contains("clientId"))
@@ -220,36 +224,39 @@ int main(int argc, char** argv)
 
             const std::string baseIndent = "                                    ";
             std::stringstream ss;
-
-            ss << baseIndent << "<thead>" << std::endl;
-            ss << baseIndent << "    <tr class=\"w-full bg-gray-100 text-gray-900\">" << std::endl;
-            ss << baseIndent << "        <th class=\"text-center py-2 border-b border-gray-200 text-left sortable\" data-column=\"conn\">Log Type</th>" << std::endl;
-            ss << baseIndent << "        <th class=\"text-center py-2 border-b border-gray-200 text-left sortable\" data-column=\"client\">Client ID</th>" << std::endl;
-            ss << baseIndent << "        <th class=\"text-center py-2 border-b border-gray-200 text-left sortable\" data-column=\"time\">Time</th>" << std::endl;
-            ss << baseIndent << "    </tr>" << std::endl;
-            ss << baseIndent << "</thead>" << std::endl;
-            ss << baseIndent << "<tbody>" << std::endl;
-            for (const ConnectionInfo& connInfo : connInfos)
             {
-                char fullLink[256];
-                sprintf(fullLink, "<a href=\"dashboard.html?logs&clientId=%s\">", connInfo.m_UniqueId.c_str());
+                WebTemplate::AutoScope tbodyScope(ss, tbody);
+                {
+                    WebTemplate::AutoScope theadScope(ss, thead);
+                    {
+                        WebTemplate::AutoScope thead_tr_Scope(ss, thead_tr);
+                        {
+                            thead_tr_th.Write(ss, { {"${{col_name}}", "conn"}, {"${{col_text}}", "Log Type"} });
+                            thead_tr_th.Write(ss, { {"${{col_name}}", "client"}, {"${{col_text}}", "Client ID"} });
+                            thead_tr_th.Write(ss, { {"${{col_name}}", "time"}, {"${{col_text}}", "Time"} });
+                        }
+                    }
+                }
+                for (const ConnectionInfo& connInfo : connInfos)
+                {
+                    char fullLink[256];
+                    sprintf(fullLink, "<a href=\"dashboard.html?logs&clientId=%s\">", connInfo.m_UniqueId.c_str());
 
-                const std::string time = convertHighResRepToString(connInfo.m_Time);
+                    const std::string time = convertHighResRepToString(connInfo.m_Time);
 
-                ss << baseIndent << "    <tr class=\"text-gray-900\">" << std::endl;
-                ss << baseIndent << "        <td class=\"text-center py-2 border-b border-gray-200\">" << (connInfo.m_Connection == ConnectionInfo::Type::Connection ? "Connection" : "Disconnection") << "</td>" << std::endl;
-                ss << baseIndent << "        <td class=\"text-center py-2 border-b border-gray-200\">" << fullLink << connInfo.m_UniqueId << "</a>" << "</td>" << std::endl;
-                ss << baseIndent << "        <td class=\"text-center py-2 border-b border-gray-200\">" << time << "</td>" << std::endl;
-                ss << baseIndent << "    </tr>" << std::endl;
+                    ss << baseIndent << "    <tr class=\"text-gray-900\">" << std::endl;
+                    ss << baseIndent << "        <td class=\"text-center py-2 border-b border-gray-200\">" << (connInfo.m_Connection == ConnectionInfo::Type::Connection ? "Connection" : "Disconnection") << "</td>" << std::endl;
+                    ss << baseIndent << "        <td class=\"text-center py-2 border-b border-gray-200\">" << fullLink << connInfo.m_UniqueId << "</a>" << "</td>" << std::endl;
+                    ss << baseIndent << "        <td class=\"text-center py-2 border-b border-gray-200\">" << time << "</td>" << std::endl;
+                    ss << baseIndent << "    </tr>" << std::endl;
+                }
             }
-            ss << baseIndent << "</tbody>" << std::endl;
-
-            replaceStrInString(content, "${{TABLE_CONTENTS}}", ss.str());
+            Utils::ReplaceStrInString(content, "${{TABLE_CONTENTS}}", ss.str());
         }
         else
         {
-            replaceStrInString(content, "${{TABLE_HEADER}}", "");
-            replaceStrInString(content, "${{TABLE_CONTENTS}}", "");
+            Utils::ReplaceStrInString(content, "${{TABLE_HEADER}}", "");
+            Utils::ReplaceStrInString(content, "${{TABLE_CONTENTS}}", "");
         }
 
         res.set_content(content, "text/html");

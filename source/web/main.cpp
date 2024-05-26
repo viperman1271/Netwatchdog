@@ -42,7 +42,7 @@ bool readFile(std::filesystem::path& filePath, httplib::Response& res, std::stri
     return false;
 }
 
-bool decodeToken(const Options& options, const httplib::Request& req, std::string token)
+bool decodeToken(const Options& options, const httplib::Request& req, std::string& token)
 {
     const std::string auth_header = req.get_header_value("Authorization");
 

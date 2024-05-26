@@ -1,0 +1,3 @@
+[submodule "extern/libbcrypt"]
+	path = extern/libbcrypt
+	url = https://github.com/trusch/libbcrypt

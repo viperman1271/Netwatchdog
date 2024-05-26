@@ -1,0 +1,6 @@
+{
+    "start" : "                                        <th class=\"text-center py-2 border-b border-gray-200 text-left sortable\" data-column=\"${{col_name}}\">${{col_text}}</th>",
+    "nl-start" : false,
+    "end" : "",
+    "nl-end" : true
+}

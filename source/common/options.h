@@ -33,4 +33,12 @@ struct Options
         std::string host;
         int port;
     } web;
+
+    struct
+    {
+        std::string userToCreate;
+        std::string userPassword;
+        bool direct;
+        bool userIsAdmin;
+    } admin;
 };

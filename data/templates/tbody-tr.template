@@ -1,0 +1,6 @@
+{
+    "start" : "                                <tr class=\"text-gray-900\">",
+    "nl-start" : true,
+    "end" : "                                </tr>",
+    "nl-end" : true
+}

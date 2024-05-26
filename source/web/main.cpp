@@ -1,5 +1,6 @@
 #include "config.h"
 #include "mongo.h"
+#include "web-template.h"
 
 #include <jwt-cpp/jwt.h>
 #include <httplib.h>
@@ -41,14 +42,35 @@ bool readFile(std::filesystem::path& filePath, httplib::Response& res, std::stri
     return false;
 }
 
-void replaceStrInString(std::string& baseString, const std::string& strToFind, const std::string& strToReplaceFoundStr) 
+bool decodeToken(const Options& options, const httplib::Request& req, std::string& token)
 {
-    size_t pos = 0;
-    while ((pos = baseString.find(strToFind, pos)) != std::string::npos) 
+    const std::string auth_header = req.get_header_value("Authorization");
+
+    if (auth_header.empty() || auth_header.substr(0, 7) != "Bearer ")
     {
-        baseString.replace(pos, strToFind.length(), strToReplaceFoundStr);
-        pos += strToReplaceFoundStr.length();
+        return false;
     }
+
+    token = auth_header.substr(7); // Remove "Bearer " prefix
+
+    return true;
+}
+
+bool extractToken(const Options& options, const httplib::Request& req, jwt::decoded_jwt<jwt::traits::kazuho_picojson>& jwtToken)
+{
+    std::string token;
+    if (!decodeToken(options, req, token))
+    {
+        return false;
+    }
+
+    jwtToken = jwt::decode(token);
+    jwt::verifier verifier = jwt::verify().allow_algorithm(jwt::algorithm::hs256{ options.server.identity }).with_issuer("auth_server");
+
+    std::error_code error;
+    verifier.verify(jwtToken, error);
+
+    return !error;
 }
 
 enum class TokenResult
@@ -58,36 +80,49 @@ enum class TokenResult
     Invalid,
 };
 
-TokenResult validateToken(const Options& options, const httplib::Request& req)
+TokenResult validateToken(Mongo& mongo, const Options& options, const httplib::Request& req)
 {
-    const std::string auth_header = req.get_header_value("Authorization");
-
-    if (auth_header.empty() || auth_header.substr(0, 7) != "Bearer ")
+    std::string token;
+    if (!decodeToken(options, req, token))
     {
         return TokenResult::Empty;
     }
 
-    std::string token = auth_header.substr(7); // Remove "Bearer " prefix
-    if (!token.empty())
+    jwt::decoded_jwt<jwt::traits::kazuho_picojson> decoded = jwt::decode(token);
+    if (extractToken(options, req, decoded))
     {
-        jwt::decoded_jwt decoded = jwt::decode(token);
-        jwt::verifier verifier = jwt::verify().allow_algorithm(jwt::algorithm::hs256{ options.server.identity }).with_issuer("auth_server");
-
-        std::error_code error;
-        verifier.verify(decoded, error);
-
-        if (!error)
+        if (!decoded.has_payload_claim("username"))
         {
-            return TokenResult::Correct;
+            return TokenResult::Invalid;
         }
+        jwt::claim usernameClaim = decoded.get_payload_claim("username");
+
+        User user;
+        if (!mongo.FetchUser(usernameClaim.as_string(), user))
+        {
+            return TokenResult::Invalid;
+        }
+
+        if (!decoded.has_payload_claim("expiry"))
+        {
+            return TokenResult::Invalid;
+        }
+
+        jwt::claim expiryClaim = decoded.get_payload_claim("expiry");
+        if (expiryClaim.as_date() < std::chrono::system_clock::now())
+        {
+            return TokenResult::Invalid;
+        }
+
+        return TokenResult::Correct;
     }
     
     return TokenResult::Invalid;
 }
 
-bool validateToken(const Options& options, const httplib::Request& req, httplib::Response& res)
+bool validateToken(Mongo& mongo, const Options& options, const httplib::Request& req, httplib::Response& res)
 {
-    switch (validateToken(options, req))
+    switch (validateToken(mongo, options, req))
     {
     case TokenResult::Correct:
         res.status = 200;
@@ -134,10 +169,12 @@ int main(int argc, char** argv)
         return -1;
     }
 
-    Mongo mongo(options);
-    if (!mongo.IsConnected())
     {
-        return -1;
+        Mongo mongo(options);
+        if (!mongo.IsConnected())
+        {
+            return -1;
+        }
     }
 
     httplib::Server svr;
@@ -164,6 +201,21 @@ int main(int argc, char** argv)
         res.set_content(content, "text/html");
     });
 
+    std::function<std::filesystem::path(const std::string&)> templateFunc = [&options](const std::string& templateName)
+    {
+        std::filesystem::path fileServingDir = options.web.fileServingDir;
+        fileServingDir /= "templates";
+        fileServingDir /= templateName;
+        return fileServingDir;
+    };
+
+    WebTemplate tbody(templateFunc("tbody.template"));
+    WebTemplate thead(templateFunc("thead.template"));
+    WebTemplate thead_tr(templateFunc("thead-tr.template"));
+    WebTemplate thead_tr_th(templateFunc("thead-tr-th.template"));
+    WebTemplate tbody_tr(templateFunc("tbody-tr.template"));
+    WebTemplate tbody_tr_td(templateFunc("tbody-tr-td.template"));
+
     svr.Get("/dashboard.html", [&](const httplib::Request& req, httplib::Response& res)
     {
         std::filesystem::path filePath = options.web.fileServingDir;
@@ -181,7 +233,7 @@ int main(int argc, char** argv)
 
         if (req.params.contains("logs"))
         {
-            replaceStrInString(content, "${{TABLE_HEADER}}", "Connection Logs");
+            Utils::ReplaceStrInString(content, "${{TABLE_HEADER}}", "Connection Logs");
 
             std::string clientId{};
             if (req.params.contains("clientId"))
@@ -190,40 +242,44 @@ int main(int argc, char** argv)
             }
 
             std::vector<ConnectionInfo> connInfos;
+            Mongo mongo(options);
             mongo.FetchClientInfo(clientId, connInfos);
 
             const std::string baseIndent = "                                    ";
             std::stringstream ss;
-
-            ss << baseIndent << "<thead>" << std::endl;
-            ss << baseIndent << "    <tr class=\"w-full bg-gray-100 text-gray-900\">" << std::endl;
-            ss << baseIndent << "        <th class=\"text-center py-2 border-b border-gray-200 text-left sortable\" data-column=\"conn\">Log Type</th>" << std::endl;
-            ss << baseIndent << "        <th class=\"text-center py-2 border-b border-gray-200 text-left sortable\" data-column=\"client\">Client ID</th>" << std::endl;
-            ss << baseIndent << "        <th class=\"text-center py-2 border-b border-gray-200 text-left sortable\" data-column=\"time\">Time</th>" << std::endl;
-            ss << baseIndent << "    </tr>" << std::endl;
-            ss << baseIndent << "</thead>" << std::endl;
-            ss << baseIndent << "<tbody>" << std::endl;
-            for (const ConnectionInfo& connInfo : connInfos)
             {
-                char fullLink[256];
-                sprintf(fullLink, "<a href=\"dashboard.html?logs&clientId=%s\">", connInfo.m_UniqueId.c_str());
+                WebTemplate::AutoScope tbodyScope(ss, tbody);
+                {
+                    WebTemplate::AutoScope theadScope(ss, thead);
+                    {
+                        WebTemplate::AutoScope thead_tr_Scope(ss, thead_tr);
+                        {
+                            thead_tr_th.Write(ss, { {"${{col_name}}", "conn"}, {"${{col_text}}", "Log Type"} });
+                            thead_tr_th.Write(ss, { {"${{col_name}}", "client"}, {"${{col_text}}", "Client ID"} });
+                            thead_tr_th.Write(ss, { {"${{col_name}}", "time"}, {"${{col_text}}", "Time"} });
+                        }
+                    }
+                }
+                for (const ConnectionInfo& connInfo : connInfos)
+                {
+                    WebTemplate::AutoScope tbody_tr_scope(ss, tbody_tr);
 
-                const std::string time = convertHighResRepToString(connInfo.m_Time);
+                    char fullLink[256];
+                    sprintf(fullLink, "<a href=\"dashboard.html?logs&clientId=%s\">%s</a>", connInfo.m_UniqueId.c_str(), connInfo.m_UniqueId.c_str());
 
-                ss << baseIndent << "    <tr class=\"text-gray-900\">" << std::endl;
-                ss << baseIndent << "        <td class=\"text-center py-2 border-b border-gray-200\">" << (connInfo.m_Connection == ConnectionInfo::Type::Connection ? "Connection" : "Disconnection") << "</td>" << std::endl;
-                ss << baseIndent << "        <td class=\"text-center py-2 border-b border-gray-200\">" << fullLink << connInfo.m_UniqueId << "</a>" << "</td>" << std::endl;
-                ss << baseIndent << "        <td class=\"text-center py-2 border-b border-gray-200\">" << time << "</td>" << std::endl;
-                ss << baseIndent << "    </tr>" << std::endl;
+                    const std::string time = convertHighResRepToString(connInfo.m_Time);
+
+                    tbody_tr_td.Write(ss, { {"${{row_text}}", (connInfo.m_Connection == ConnectionInfo::Type::Connection ? "Connection" : "Disconnection")} });
+                    tbody_tr_td.Write(ss, { {"${{row_text}}", fullLink} });
+                    tbody_tr_td.Write(ss, { {"${{row_text}}", time} });
+                }
             }
-            ss << baseIndent << "</tbody>" << std::endl;
-
-            replaceStrInString(content, "${{TABLE_CONTENTS}}", ss.str());
+            Utils::ReplaceStrInString(content, "${{TABLE_CONTENTS}}", ss.str());
         }
         else
         {
-            replaceStrInString(content, "${{TABLE_HEADER}}", "");
-            replaceStrInString(content, "${{TABLE_CONTENTS}}", "");
+            Utils::ReplaceStrInString(content, "${{TABLE_HEADER}}", "");
+            Utils::ReplaceStrInString(content, "${{TABLE_CONTENTS}}", "");
         }
 
         res.set_content(content, "text/html");
@@ -231,7 +287,8 @@ int main(int argc, char** argv)
 
     svr.Get("/api/protected", [&](const httplib::Request& req, httplib::Response& res)
     {
-        validateToken(options, req, res);
+        Mongo mongo(options);
+        validateToken(mongo, options, req, res);
     });
 
     svr.Get(R"(/api/(.*))", [&](const httplib::Request& req, httplib::Response& res)
@@ -258,10 +315,14 @@ int main(int argc, char** argv)
         std::string username = body["username"];
         std::string password = body["password"];
 
-        if (username == "asdf" && password == "asdf") 
+        Mongo mongo(options);
+
+        User user;
+        if(mongo.FetchUser(username, user) && user.ValidatePassword(password))
         {
-            // Generate JWT
-            const std::string token = jwt::create().set_issuer("auth_server").set_type("JWS").set_payload_claim("username", jwt::claim(username)).sign(jwt::algorithm::hs256{ options.server.identity });
+            const std::chrono::system_clock::time_point timepoint = std::chrono::system_clock::now() + std::chrono::days(30);
+
+            const std::string token = jwt::create().set_issuer("auth_server").set_type("JWS").set_payload_claim("username", jwt::claim(username)).set_payload_claim("expiry", jwt::claim(timepoint)).sign(jwt::algorithm::hs256{options.server.identity});
 
             nlohmann::json response = { {"token", token} };
             res.set_content(response.dump(), "application/json");
@@ -273,11 +334,12 @@ int main(int argc, char** argv)
         }
     });
 
-    svr.Post("/api/client-info/clear", [&mongo](const httplib::Request& req, httplib::Response& res) 
+    svr.Post("/api/client-info/clear", [&options](const httplib::Request& req, httplib::Response& res) 
     {
         auto body = nlohmann::json::parse(req.body);
         std::string clientId = body["clientId"];
 
+        Mongo mongo(options);
         mongo.DeleteInfo(Mongo::Database::Stats, Mongo::Collection::Connection, clientId);
     });
 

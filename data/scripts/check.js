@@ -1,4 +1,6 @@
-function checkTokenAndRedirect() {
+import { redirectToLogin } from './redirectToLogin.js'
+
+export function checkTokenAndRedirect() {
     const token = localStorage.getItem('authToken');
     if (token) {
         fetch('/api/protected', {

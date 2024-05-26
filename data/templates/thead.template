@@ -1,6 +1,6 @@
 {
-    "start" : "                                        <thead>",
+    "start" : "                                <thead>",
     "nl-start" : true,
-    "end" : "                                        </thead>",
+    "end" : "                                </thead>",
     "nl-end" : true
 }

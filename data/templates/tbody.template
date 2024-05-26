@@ -1,6 +1,6 @@
 {
-    "start" : "                                    <tbody>",
+    "start" : "                            <tbody>",
     "nl-start" : true,
-    "end" : "                                    </tbody>",
+    "end" : "                            </tbody>",
     "nl-end" : true
 }

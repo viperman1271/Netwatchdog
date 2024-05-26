@@ -1,5 +1,5 @@
 {
-    "start" : "                                            <td class=\"text-center py-2 border-b border-gray-200\">${{row_text}}</td>",
+    "start" : "                                    <td class=\"text-center py-2 border-b border-gray-200\">${{row_text}}</td>",
     "nl-start" : true,
     "end" : "",
     "nl-end" : false

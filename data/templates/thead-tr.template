@@ -1,6 +1,6 @@
 {
-    "start" : "                                            <tr class=\"w-full bg-gray-100 text-gray-900\">",
+    "start" : "                                    <tr class=\"w-full bg-gray-100 text-gray-900\">",
     "nl-start" : true,
-    "end" : "                                            </tr>",
+    "end" : "                                    </tr>",
     "nl-end" : true
 }

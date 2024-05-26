@@ -1,4 +1,4 @@
-function checkLoginAndRedirect() {
+export function checkLoginAndRedirect() {
     const token = localStorage.getItem('authToken');
     if (token) {
         fetch('/api/protected', {

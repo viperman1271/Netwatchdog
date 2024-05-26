@@ -1,6 +1,6 @@
 #include "objectmodel.h"
 
-#include <bcrypt/bcrypt.hpp>
+#include <bcrypt/BCrypt.hpp>
 #include <stduuid/uuid.h>
 
 constexpr int WORKLOAD = 12;

@@ -60,6 +60,12 @@
                             <span class="sidebar-text">Profile</span>
                         </li>
                     </a>
+                    <a href="?signout">
+                        <li class="p-4 hover:bg-gray-700 flex items-center">
+                            <i class="fas fa-arrow-right-from-bracket"></i>
+                            <span class="sidebar-text">Sign out</span>
+                        </li>
+                    </a>
                 </ul>
             </nav>
             <button id="toggleSidebarBottom" class="bg-gray-700 text-white p-2 m-4 flex items-center justify-center">
@@ -143,6 +149,11 @@ ${{TABLE_CONTENTS}}
       document.addEventListener('DOMContentLoaded', function() {
         if(window.location.search !== "?logs") {
           document.getElementById('clearItems').style.visibility = 'hidden';
+        } 
+        
+        if(window.location.search === "?signout") {
+            localStorage.setItem('authToken', '');
+            window.location.href = '/';
         }
       });
       

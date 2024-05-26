@@ -7,8 +7,8 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 set(LIBBCRYPT_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/extern/libbcrypt/include)
 
-if (NOT EXISTS ${LIBBCRYPT_INCLUDE_DIR}/bcrypt/bcrypt.hpp)
-    message(FATAL_ERROR "libbcrypt not found at ${LIBBCRYPT_INCLUDE_DIR} [${LIBBCRYPT_INCLUDE_DIR}/bcrypt/bcrypt.hpp]")
+if (NOT EXISTS ${LIBBCRYPT_INCLUDE_DIR}/bcrypt/BCrypt.hpp)
+    message(FATAL_ERROR "libbcrypt not found at ${LIBBCRYPT_INCLUDE_DIR} [${LIBBCRYPT_INCLUDE_DIR}/bcrypt/BCrypt.hpp]")
 endif()
 
 include_directories(${CMAKE_SOURCE_DIR}/source/client)

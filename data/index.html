@@ -1,31 +1,59 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Netwatchdog</title>
-    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
-    <link href="/styles/styles.css" rel="stylesheet"/>
 
+<!doctype html>
+<html lang="en" data-bs-theme="auto">
+<head>
+    <script src="https://getbootstrap.com/docs/5.3/assets/js/color-modes.js"></script>
+
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Netwatchdog</title>
+
+    <link rel="stylesheet" href="/styles/styles.css"/>
+    <link rel="stylesheet" href="/styles/index.css"/>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@docsearch/css@3">
+    <link href="https://getbootstrap.com/docs/5.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+
+    <!-- Favicons -->
     <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
     <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32.png">
     <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16.png">
     <link rel="icon" type="image/x-icon" href="/images/favicon.ico">
     <link rel="manifest" href="/images/site.webmanifest">
-    <!--<meta http-equiv="refresh" content="0; url=login.html" />-->
 </head>
-<body class="bg-common min-h-screen flex flex-col justify-between">
-    <script src="/scripts/auth.js" type="text/javascript"></script>
+<body class="bg-common">
+    <script src="/scripts/login-redirect.js" type="module"></script>
 
-    <div class="flex-grow flex items-center justify-center">
-        <p class="text-white text-6xl">
-            <b>Netwatchdog</b>
-        </p>
-    </div>
-    <div class="text-center mb-4">
-        <p class="text-gray-500 text-xs">
+    <svg xmlns="http://www.w3.org/2000/svg" class="d-none">
+        <symbol id="arrow-right-short" viewBox="0 0 16 16">
+            <path fill-rule="evenodd" d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"/>
+        </symbol>
+    </svg>
+
+    <div class="container my-5">
+        <div class="p-5 text-center bg-body-tertiary rounded-3">
+            <img src="/images/android-chrome-192x192.png"></img>
+            <br/>
+            <br/>
+            <h1 class="text-body-emphasis">Netwatchdog</h1>
+            <p class="col-lg-8 mx-auto fs-5 text-muted">
+            Plase login or create a new account
+            </p>
+            <div class="d-inline-flex gap-2 mb-5">
+            <a href="/login.html">
+                <button class="d-inline-flex align-items-center btn btn-primary btn-lg px-4 rounded-pill" type="button">
+                    Login
+                    <svg class="bi ms-2" width="24" height="24"><use xlink:href="#arrow-right-short"/></svg>
+                </button>
+            </a>
+            <a href="/login.html">
+                <button class="btn btn-outline-secondary btn-lg px-4 rounded-pill" type="button">
+                    Sign-up
+                </button>
+            </a>
+            </div>
+            <br/>
             <a href="https://github.com/viperman1271/Netwatchdog/" target="_blank"><b>Netwatchdog</b></a> - Simple network connection monitor
-        </p>
+        </div>
     </div>
 </body>
 </html>

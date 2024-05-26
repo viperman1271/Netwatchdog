@@ -192,6 +192,8 @@ int main(int argc, char** argv)
     WebTemplate thead(templateFunc("thead.template"));
     WebTemplate thead_tr(templateFunc("thead-tr.template"));
     WebTemplate thead_tr_th(templateFunc("thead-tr-th.template"));
+    WebTemplate tbody_tr(templateFunc("tbody-tr.template"));
+    WebTemplate tbody_tr_td(templateFunc("tbody-tr-td.template"));
 
     svr.Get("/dashboard.html", [&](const httplib::Request& req, httplib::Response& res)
     {
@@ -239,16 +241,16 @@ int main(int argc, char** argv)
                 }
                 for (const ConnectionInfo& connInfo : connInfos)
                 {
+                    WebTemplate::AutoScope tbody_tr_scope(ss, tbody_tr);
+
                     char fullLink[256];
-                    sprintf(fullLink, "<a href=\"dashboard.html?logs&clientId=%s\">", connInfo.m_UniqueId.c_str());
+                    sprintf(fullLink, "<a href=\"dashboard.html?logs&clientId=%s\">%s</a>", connInfo.m_UniqueId.c_str(), connInfo.m_UniqueId.c_str());
 
                     const std::string time = convertHighResRepToString(connInfo.m_Time);
 
-                    ss << baseIndent << "    <tr class=\"text-gray-900\">" << std::endl;
-                    ss << baseIndent << "        <td class=\"text-center py-2 border-b border-gray-200\">" << (connInfo.m_Connection == ConnectionInfo::Type::Connection ? "Connection" : "Disconnection") << "</td>" << std::endl;
-                    ss << baseIndent << "        <td class=\"text-center py-2 border-b border-gray-200\">" << fullLink << connInfo.m_UniqueId << "</a>" << "</td>" << std::endl;
-                    ss << baseIndent << "        <td class=\"text-center py-2 border-b border-gray-200\">" << time << "</td>" << std::endl;
-                    ss << baseIndent << "    </tr>" << std::endl;
+                    tbody_tr_td.Write(ss, { {"${{row_text}}", (connInfo.m_Connection == ConnectionInfo::Type::Connection ? "Connection" : "Disconnection")} });
+                    tbody_tr_td.Write(ss, { {"${{row_text}}", fullLink} });
+                    tbody_tr_td.Write(ss, { {"${{row_text}}", time} });
                 }
             }
             Utils::ReplaceStrInString(content, "${{TABLE_CONTENTS}}", ss.str());

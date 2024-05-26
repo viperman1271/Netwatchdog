@@ -42,6 +42,37 @@ bool readFile(std::filesystem::path& filePath, httplib::Response& res, std::stri
     return false;
 }
 
+bool decodeToken(const Options& options, const httplib::Request& req, std::string token)
+{
+    const std::string auth_header = req.get_header_value("Authorization");
+
+    if (auth_header.empty() || auth_header.substr(0, 7) != "Bearer ")
+    {
+        return false;
+    }
+
+    token = auth_header.substr(7); // Remove "Bearer " prefix
+
+    return true;
+}
+
+bool extractToken(const Options& options, const httplib::Request& req, jwt::decoded_jwt<jwt::traits::kazuho_picojson>& jwtToken)
+{
+    std::string token;
+    if (!decodeToken(options, req, token))
+    {
+        return false;
+    }
+
+    jwtToken = jwt::decode(token);
+    jwt::verifier verifier = jwt::verify().allow_algorithm(jwt::algorithm::hs256{ options.server.identity }).with_issuer("auth_server");
+
+    std::error_code error;
+    verifier.verify(jwtToken, error);
+
+    return !error;
+}
+
 enum class TokenResult
 {
     Correct,
@@ -51,22 +82,15 @@ enum class TokenResult
 
 TokenResult validateToken(Mongo& mongo, const Options& options, const httplib::Request& req)
 {
-    const std::string auth_header = req.get_header_value("Authorization");
-
-    if (auth_header.empty() || auth_header.substr(0, 7) != "Bearer ")
+    std::string token;
+    if (!decodeToken(options, req, token))
     {
         return TokenResult::Empty;
     }
 
-    std::string token = auth_header.substr(7); // Remove "Bearer " prefix
-    if (!token.empty())
+    jwt::decoded_jwt<jwt::traits::kazuho_picojson> decoded = jwt::decode(token);
+    if (extractToken(options, req, decoded))
     {
-        jwt::decoded_jwt decoded = jwt::decode(token);
-        jwt::verifier verifier = jwt::verify().allow_algorithm(jwt::algorithm::hs256{ options.server.identity }).with_issuer("auth_server");
-
-        std::error_code error;
-        verifier.verify(decoded, error);
-
         if (!decoded.has_payload_claim("username"))
         {
             return TokenResult::Invalid;
@@ -90,10 +114,7 @@ TokenResult validateToken(Mongo& mongo, const Options& options, const httplib::R
             return TokenResult::Invalid;
         }
 
-        if (!error)
-        {
-            return TokenResult::Correct;
-        }
+        return TokenResult::Correct;
     }
     
     return TokenResult::Invalid;

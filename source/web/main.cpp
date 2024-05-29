@@ -13,9 +13,11 @@
 
 #include <filesystem>
 
+#ifdef _WIN32
 extern "C" {
 #include "openssl/applink.c"
 }
+#endif // _WIN32
 
 bool readFile(std::filesystem::path& filePath, httplib::Response& res, std::string& content)
 {

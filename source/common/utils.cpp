@@ -32,7 +32,7 @@ namespace Utils
         return {};
     }
 
-    std::filesystem::path& GetBasePath()
+    const std::filesystem::path& GetBasePath()
     {
 #ifdef _WIN32
         std::string homeDir = GetEnvVar("USERPROFILE");
@@ -60,7 +60,7 @@ namespace Utils
         return path;
     }
 
-    std::filesystem::path& GetConfigPath()
+    const std::filesystem::path& GetConfigPath()
     {
         static bool isInit = false;
         static std::filesystem::path path;

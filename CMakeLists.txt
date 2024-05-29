@@ -92,6 +92,7 @@ file(GLOB NETWATCHDOG_WEB_SOURCES ${NETWATCHDOG_WEB_SRC_DIR}/*.*)
 add_executable(web ${NETWATCHDOG_WEB_SOURCES})
 target_compile_definitions(web PRIVATE NETWATCHDOG_SERVER)
 target_link_libraries(web PRIVATE libnetwatchdog httplib::httplib nlohmann_json::nlohmann_json OpenSSL::SSL OpenSSL::Crypto)
+target_compile_definitions(web PRIVATE CPPHTTPLIB_OPENSSL_SUPPORT)
 
 # Admin executable
 set(NETWATCHDOG_ADMIN_SRC_DIR ${CMAKE_SOURCE_DIR}/source/admin)

@@ -5,8 +5,17 @@
 #include <jwt-cpp/jwt.h>
 #include <httplib.h>
 #include <nlohmann/json.hpp>
+#include <openssl/pem.h>
+#include <openssl/x509.h>
+#include <openssl/evp.h>
+#include <openssl/rsa.h>
+#include <openssl/x509v3.h>
 
 #include <filesystem>
+
+extern "C" {
+#include "openssl/applink.c"
+}
 
 bool readFile(std::filesystem::path& filePath, httplib::Response& res, std::string& content)
 {
@@ -160,11 +169,49 @@ std::string convertHighResRepToString(std::chrono::system_clock::duration::rep r
     return std::string(buffer);
 }
 
+void generateKeyAndCertificate(const Options& options)
+{
+    // Generate the RSA key
+    EVP_PKEY* pkey = EVP_PKEY_new();
+    RSA* rsa = RSA_generate_key(2048, RSA_F4, nullptr, nullptr);
+    EVP_PKEY_assign_RSA(pkey, rsa);
+
+    // Generate the X509 certificate
+    X509* x509 = X509_new();
+    ASN1_INTEGER_set(X509_get_serialNumber(x509), 1);
+    X509_gmtime_adj(X509_get_notBefore(x509), 0);
+    X509_gmtime_adj(X509_get_notAfter(x509), 31536000L); // Valid for 1 year
+    X509_set_pubkey(x509, pkey);
+
+    // Set certificate subject and issuer name
+    X509_NAME* name = X509_get_subject_name(x509);
+    X509_NAME_add_entry_by_txt(name, "C", MBSTRING_ASC, (unsigned char*)"US", -1, -1, 0);
+    X509_NAME_add_entry_by_txt(name, "O", MBSTRING_ASC, (unsigned char*)"My Organization", -1, -1, 0);
+    X509_NAME_add_entry_by_txt(name, "CN", MBSTRING_ASC, (unsigned char*)"My Common Name", -1, -1, 0);
+    X509_set_issuer_name(x509, name);
+
+    // Sign the certificate with the private key
+    X509_sign(x509, pkey, EVP_sha256());
+
+    FILE* pkey_file = fopen(options.web.keyPath.c_str(), "wb");
+    PEM_write_PrivateKey(pkey_file, pkey, nullptr, nullptr, 0, nullptr, nullptr);
+    fclose(pkey_file);
+
+    // Write the certificate to a file
+    FILE* x509_file = fopen(options.web.certificatePath.c_str(), "wb");
+    PEM_write_X509(x509_file, x509);
+    fclose(x509_file);
+
+    // Clean up
+    EVP_PKEY_free(pkey);
+    X509_free(x509);
+}
+
 int main(int argc, char** argv)
 {
     Options options;
     Config::LoadOrCreateConfig(options);
-    if (!Config::ParseCommandLineOptions(argc, argv, options, Config::ParsingType::Server))
+    if (!Config::ParseCommandLineOptions(argc, argv, options, Config::ParsingType::Web))
     {
         return -1;
     }
@@ -177,7 +224,33 @@ int main(int argc, char** argv)
         }
     }
 
-    httplib::Server svr;
+    std::unique_ptr<httplib::Server> svr;
+    if (options.web.secure)
+    {
+        std::filesystem::path certificatePath(options.web.certificatePath);
+        if (!certificatePath.is_absolute())
+        {
+            std::filesystem::path basePath = Utils::GetBasePath();
+            options.web.certificatePath = basePath.append(options.web.certificatePath).string();
+        }
+        std::filesystem::path keyPath(options.web.keyPath);
+        if (!keyPath.is_absolute())
+        {
+            std::filesystem::path basePath = Utils::GetBasePath();
+            options.web.keyPath = basePath.append(options.web.keyPath).string();
+        }
+
+        if (!std::filesystem::exists(options.web.certificatePath) || !std::filesystem::exists(options.web.keyPath))
+        {
+            generateKeyAndCertificate(options);
+        }
+
+        svr.reset(new httplib::SSLServer(options.web.certificatePath.c_str(), options.web.keyPath.c_str()));
+    }
+    else
+    {
+        svr.reset(new httplib::Server);
+    }
 
     std::filesystem::path fileServingDir = options.web.fileServingDir;
     std::function<std::string(const std::string&)> func = [&options](const std::string& str)
@@ -187,11 +260,11 @@ int main(int argc, char** argv)
         return fileServingDir.string();
     };
 
-    svr.set_mount_point("/images", func("images"));
-    svr.set_mount_point("/scripts", func("scripts"));
-    svr.set_mount_point("/styles", func("styles"));
+    svr->set_mount_point("/images", func("images"));
+    svr->set_mount_point("/scripts", func("scripts"));
+    svr->set_mount_point("/styles", func("styles"));
 
-    svr.Get("/", [&](const httplib::Request& req, httplib::Response& res)
+    svr->Get("/", [&](const httplib::Request& req, httplib::Response& res)
     {
         std::filesystem::path filePath = options.web.fileServingDir;
         filePath /= "index.html";
@@ -216,7 +289,7 @@ int main(int argc, char** argv)
     WebTemplate tbody_tr(templateFunc("tbody-tr.template"));
     WebTemplate tbody_tr_td(templateFunc("tbody-tr-td.template"));
 
-    svr.Get("/dashboard.html", [&](const httplib::Request& req, httplib::Response& res)
+    svr->Get("/dashboard.html", [&](const httplib::Request& req, httplib::Response& res)
     {
         std::filesystem::path filePath = options.web.fileServingDir;
         filePath /= "dashboard.html";
@@ -285,19 +358,19 @@ int main(int argc, char** argv)
         res.set_content(content, "text/html");
     });
 
-    svr.Get("/api/protected", [&](const httplib::Request& req, httplib::Response& res)
+    svr->Get("/api/protected", [&](const httplib::Request& req, httplib::Response& res)
     {
         Mongo mongo(options);
         validateToken(mongo, options, req, res);
     });
 
-    svr.Get(R"(/api/(.*))", [&](const httplib::Request& req, httplib::Response& res)
+    svr->Get(R"(/api/(.*))", [&](const httplib::Request& req, httplib::Response& res)
     {
         res.status = 200;
         res.set_content("Invalid token", "text/plain");
     });
 
-    svr.Get(R"(/(.*))", [&](const httplib::Request& req, httplib::Response& res)
+    svr->Get(R"(/(.*))", [&](const httplib::Request& req, httplib::Response& res)
     {
         const std::string file = req.matches[1];
 
@@ -309,7 +382,7 @@ int main(int argc, char** argv)
         res.set_content(content, "text/html");
     });
 
-    svr.Post("/api/login", [&options](const httplib::Request& req, httplib::Response& res) 
+    svr->Post("/api/login", [&options](const httplib::Request& req, httplib::Response& res) 
     {
         auto body = nlohmann::json::parse(req.body);
         std::string username = body["username"];
@@ -334,7 +407,7 @@ int main(int argc, char** argv)
         }
     });
 
-    svr.Post("/api/client-info/clear", [&options](const httplib::Request& req, httplib::Response& res) 
+    svr->Post("/api/client-info/clear", [&options](const httplib::Request& req, httplib::Response& res) 
     {
         auto body = nlohmann::json::parse(req.body);
         std::string clientId = body["clientId"];
@@ -343,7 +416,7 @@ int main(int argc, char** argv)
         mongo.DeleteInfo(Mongo::Database::Stats, Mongo::Collection::Connection, clientId);
     });
 
-    svr.listen(options.web.host, options.web.port);
+    svr->listen(options.web.host, options.web.secure ? options.web.securePort : options.web.port);
 
     return 0;
 }

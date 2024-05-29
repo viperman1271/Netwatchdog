@@ -13,12 +13,6 @@
 
 #include <filesystem>
 
-#ifdef _WIN32
-extern "C" {
-#include "openssl/applink.c"
-}
-#endif // _WIN32
-
 bool readFile(std::filesystem::path& filePath, httplib::Response& res, std::string& content)
 {
     if (std::filesystem::exists(filePath))
@@ -222,6 +216,7 @@ int main(int argc, char** argv)
         Mongo mongo(options);
         if (!mongo.IsConnected())
         {
+            std::cerr << "Could not connect to database server" << std::endl;
             return -1;
         }
     }

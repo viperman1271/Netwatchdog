@@ -99,15 +99,15 @@ include_directories(${NETWATCHDOG_WEB_SRC_DIR} ${NETWATCHDOG_LIBWEB_SRC_DIR})
 
 file(GLOB NETWATCHDOG_WEB_SOURCES ${NETWATCHDOG_WEB_SRC_DIR}/*.*)
 
-add_executable(web ${NETWATCHDOG_WEB_SRC_DIR})
+add_executable(web ${NETWATCHDOG_WEB_SOURCES} ${NETWATCHDOG_LIBWEB_SRC_DIR}/applink.cpp)
 target_compile_definitions(web PRIVATE NETWATCHDOG_SERVER)
 target_link_libraries(web PRIVATE libnetwatchdog libweb)
 target_compile_definitions(web PRIVATE CPPHTTPLIB_OPENSSL_SUPPORT)
 
 # Web Server Tests
 set(NETWATCHDOG_WEB_TEST_SOURCE_DIR ${CMAKE_SOURCE_DIR}/source/tests/web)
-file(GLOB NETWATCHDOG_WEB_TEST_SOURCES ${NETWATCHDOG_WEB_TEST_SOURCE_DIR}/*.*)
-add_executable(web_tests ${NETWATCHDOG_WEB_TEST_SOURCES})
+file(GLOB NETWATCHDOG_WEB_TEST_SOURCES ${NETWATCHDOG_WEB_TEST_SOURCE_DIR}/*.* )
+add_executable(web_tests ${NETWATCHDOG_WEB_TEST_SOURCES} ${NETWATCHDOG_LIBWEB_SRC_DIR}/applink.cpp)
 target_link_libraries(web_tests PRIVATE Catch2::Catch2WithMain libnetwatchdog libweb)
 
 # Admin executable

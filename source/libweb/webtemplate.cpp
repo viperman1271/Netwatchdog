@@ -1,4 +1,4 @@
-#include "web-template.h"
+#include "webtemplate.h"
 
 #include "utils.h"
 

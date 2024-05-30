@@ -91,7 +91,8 @@ namespace Config
         ConfigureDefaultValue(config, "web", "secure", true);
         ConfigureDefaultValue(config, "web", "secure_port", 443);
         ConfigureDefaultValue(config, "web", "serving_dir", Utils::GetBasePath().string());
-        ConfigureDefaultValue(config, "web", "key_path", "private_key.pem");
+        ConfigureDefaultValue(config, "web", "private_key_path", "private_key.pem");
+        ConfigureDefaultValue(config, "web", "public_key_path", "public_key.pem");
         ConfigureDefaultValue(config, "web", "certificate_path", "certificate.pem");
 
         ConfigureDefaultValue(config, "admin", "direct", false);
@@ -123,7 +124,8 @@ namespace Config
         options.web.port = toml::find<int>(config, "web", "port");
         options.web.secure = toml::find<bool>(config, "web", "secure");
         options.web.securePort = toml::find<int>(config, "web", "secure_port");
-        options.web.keyPath = toml::find<std::string>(config, "web", "key_path");
+        options.web.privateKeyPath = toml::find<std::string>(config, "web", "private_key_path");
+        options.web.publicKeyPath = toml::find<std::string>(config, "web", "public_key_path");
         options.web.certificatePath = toml::find<std::string>(config, "web", "certificate_path");
 
         options.database.username = toml::find<std::string>(config, "database", "username");
@@ -169,7 +171,8 @@ namespace Config
         {
             app.add_flag("-s,--secure", options.web.secure, "Whether secure communications (i.e https) should be used [defaults to true]");
             app.add_option("--secure_port", options.web.securePort, "The web secure port to use [defaults to 443]");
-            app.add_option("--key", options.web.keyPath, "Path to find the private key for SSL cert");
+            app.add_option("--private_key", options.web.privateKeyPath, "Path to find the private key for SSL cert");
+            app.add_option("--public_key", options.web.publicKeyPath, "Path to find the public key for SSL cert");
             app.add_option("--certificate", options.web.certificatePath, "Path to find the certificate for SSL cert");
         }
 

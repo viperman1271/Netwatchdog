@@ -88,7 +88,7 @@ set(NETWATCHDOG_LIBWEB_SRC_DIR ${CMAKE_SOURCE_DIR}/source/libweb)
 file(GLOB NETWATCHDOG_LIBWEB_SOURCES ${NETWATCHDOG_LIBWEB_SRC_DIR}/*.*)
 
 add_library(libweb ${NETWATCHDOG_LIBWEB_SOURCES})
-target_link_libraries(libweb CLI11::CLI11 cereal::cereal httplib::httplib nlohmann_json::nlohmann_json OpenSSL::SSL OpenSSL::Crypto ${BSONCXX_LIB} ${MONGOC_LIB} ${MONGOCXXLIB})
+target_link_libraries(libweb libnetwatchdog CLI11::CLI11 cereal::cereal httplib::httplib nlohmann_json::nlohmann_json OpenSSL::SSL OpenSSL::Crypto ${BSONCXX_LIB} ${MONGOC_LIB} ${MONGOCXXLIB})
 target_compile_definitions(libweb PRIVATE CPPHTTPLIB_OPENSSL_SUPPORT)
 
 include_directories(${NETWATCHDOG_DATABASE_SRC_DIR})

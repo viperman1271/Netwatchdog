@@ -27,8 +27,6 @@ TEST_CASE("Private/Public key + certificate generated as expected")
     Options options;
     Config::LoadOrCreateConfig(options);
 
-    options.
-
     WebServer webServer(options);
     options = webServer.GetOptions();
 

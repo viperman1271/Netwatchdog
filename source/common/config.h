@@ -21,6 +21,7 @@ namespace Config
         Client,
         Server,
         Admin,
+        Web,
     };
 
     bool ValueExists(toml::value& config, const std::string& category, const std::string& variable);

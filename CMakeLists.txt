@@ -82,16 +82,34 @@ add_executable(netwatchdogd ${NETWATCHDOGD_SOURCES})
 target_link_libraries(netwatchdogd PRIVATE libnetwatchdog cereal::cereal cppzmq toml11::toml11)
 target_compile_definitions(netwatchdogd PRIVATE NETWATCHDOG_SERVER)
 
+# Web Lib
+set(NETWATCHDOG_LIBWEB_SRC_DIR ${CMAKE_SOURCE_DIR}/source/libweb)
+
+file(GLOB NETWATCHDOG_LIBWEB_SOURCES ${NETWATCHDOG_LIBWEB_SRC_DIR}/*.*)
+
+add_library(libweb ${NETWATCHDOG_LIBWEB_SOURCES})
+target_link_libraries(libweb libnetwatchdog CLI11::CLI11 cereal::cereal httplib::httplib nlohmann_json::nlohmann_json OpenSSL::SSL OpenSSL::Crypto ${BSONCXX_LIB} ${MONGOC_LIB} ${MONGOCXXLIB})
+target_compile_definitions(libweb PRIVATE CPPHTTPLIB_OPENSSL_SUPPORT)
+
+include_directories(${NETWATCHDOG_DATABASE_SRC_DIR})
+
 # Web server
 set(NETWATCHDOG_WEB_SRC_DIR ${CMAKE_SOURCE_DIR}/source/web)
 
-include_directories(${NETWATCHDOG_WEB_SRC_DIR})
+include_directories(${NETWATCHDOG_WEB_SRC_DIR} ${NETWATCHDOG_LIBWEB_SRC_DIR})
 
 file(GLOB NETWATCHDOG_WEB_SOURCES ${NETWATCHDOG_WEB_SRC_DIR}/*.*)
 
-add_executable(web ${NETWATCHDOG_WEB_SOURCES})
+add_executable(web ${NETWATCHDOG_WEB_SOURCES} ${NETWATCHDOG_LIBWEB_SRC_DIR}/applink.cpp)
 target_compile_definitions(web PRIVATE NETWATCHDOG_SERVER)
-target_link_libraries(web PRIVATE libnetwatchdog httplib::httplib nlohmann_json::nlohmann_json OpenSSL::SSL OpenSSL::Crypto)
+target_link_libraries(web PRIVATE libnetwatchdog libweb)
+target_compile_definitions(web PRIVATE CPPHTTPLIB_OPENSSL_SUPPORT)
+
+# Web Server Tests
+set(NETWATCHDOG_WEB_TEST_SOURCE_DIR ${CMAKE_SOURCE_DIR}/source/tests/web)
+file(GLOB NETWATCHDOG_WEB_TEST_SOURCES ${NETWATCHDOG_WEB_TEST_SOURCE_DIR}/*.* )
+add_executable(web_tests ${NETWATCHDOG_WEB_TEST_SOURCES} ${NETWATCHDOG_LIBWEB_SRC_DIR}/applink.cpp)
+target_link_libraries(web_tests PRIVATE Catch2::Catch2WithMain libnetwatchdog libweb)
 
 # Admin executable
 set(NETWATCHDOG_ADMIN_SRC_DIR ${CMAKE_SOURCE_DIR}/source/admin)
@@ -105,12 +123,15 @@ target_link_libraries(admin PRIVATE libnetwatchdog httplib::httplib nlohmann_jso
 
 # Visual Studio directories
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
-set_target_properties(libnetwatchdog PROPERTIES FOLDER "netwatchdog")
+set_target_properties(libnetwatchdog PROPERTIES FOLDER "netwatchdog/libs")
+set_target_properties(libweb PROPERTIES FOLDER "netwatchdog/libs")
 set_target_properties(netwatchdogc PROPERTIES FOLDER "netwatchdog")
 set_target_properties(netwatchdogd PROPERTIES FOLDER "netwatchdog")
 set_target_properties(web PROPERTIES FOLDER "netwatchdog")
 set_target_properties(admin PROPERTIES FOLDER "netwatchdog")
 set_target_properties(libwatchdog_tests PROPERTIES FOLDER "netwatchdog/tests")
+set_target_properties(web_tests PROPERTIES FOLDER "netwatchdog/tests")
 
 # Add tests
 catch_discover_tests(libwatchdog_tests)
+catch_discover_tests(web_tests)

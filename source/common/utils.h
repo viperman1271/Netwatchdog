@@ -8,8 +8,8 @@
 namespace Utils
 {
     std::string GetEnvVar(const char* envVariable);
-    std::filesystem::path& GetBasePath();
-    std::filesystem::path& GetConfigPath();
+    const std::filesystem::path& GetBasePath();
+    const std::filesystem::path& GetConfigPath();
 
     void SetThreadName(std::thread& thread, const std::string& name);
     void SetThreadName(const std::string& name);

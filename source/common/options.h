@@ -31,7 +31,12 @@ struct Options
     {
         std::string fileServingDir;
         std::string host;
+        std::string privateKeyPath;
+        std::string publicKeyPath;
+        std::string certificatePath;
         int port;
+        int securePort;
+        bool secure;
     } web;
 
     struct

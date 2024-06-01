@@ -70,7 +70,7 @@ target_compile_definitions(libwatchdog_tests PRIVATE NETWATCHDOG_CLIENT)
 # Client executable
 set(NETWATCHDOGC_SRC_DIR ${CMAKE_SOURCE_DIR}/source/client)
 add_executable(netwatchdogc ${NETWATCHDOGC_SRC_DIR}/main.cpp ${NETWATCHDOGC_SRC_DIR}/client.h ${NETWATCHDOGC_SRC_DIR}/client.cpp)
-target_link_libraries(netwatchdogc libnetwatchdog cppzmq-staic libzmq-static)
+target_link_libraries(netwatchdogc libnetwatchdog cppzmq-static libzmq-static)
 target_compile_definitions(netwatchdogc PRIVATE NETWATCHDOG_CLIENT ZMQ_HAVE_CURVE)
 
 # Server executable

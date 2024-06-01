@@ -77,9 +77,11 @@ namespace Config
 
         ConfigureDefaultValue(config, "server", "host", "*");
         ConfigureDefaultValue(config, "server", "port", options.server.port);
+        ConfigureDefaultValue(config, "server", "secure", true);
 
         ConfigureDefaultValue(config, "client", "host", "localhost");
         ConfigureDefaultValue(config, "client", "port", options.client.port);
+        ConfigureDefaultValue(config, "client", "secure", true);
 
         ConfigureDefaultValue(config, "database", "username", "root");
         ConfigureDefaultValue(config, "database", "password", "password1234");
@@ -114,10 +116,12 @@ namespace Config
         options.client.host = toml::find<std::string>(config, "client", "host");
         options.client.port = toml::find<int>(config, "client", "port");
         options.client.identity = toml::find<std::string>(config, "client", "identity");
+        options.client.secure = toml::find<bool>(config, "client", "secure");
 
         options.server.host = toml::find<std::string>(config, "server", "host");
         options.server.port = toml::find<int>(config, "server", "port");
         options.server.identity = toml::find<std::string>(config, "server", "identity");
+        options.server.secure = toml::find<bool>(config, "server", "secure");
 
         options.web.fileServingDir = toml::find<std::string>(config, "web", "serving_dir");
         options.web.host = toml::find<std::string>(config, "web", "host");

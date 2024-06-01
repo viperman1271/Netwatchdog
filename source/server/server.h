@@ -35,16 +35,21 @@ private:
     std::atomic<bool> m_ShouldContinue;
 
     zmq::socket_t m_ServerSocket;
+    zmq::socket_t m_KeySocket;
     zmq::socket_t m_MonitorSocket;
 
     std::thread m_Thread;
     std::thread m_PendingWorkThread;
     std::thread m_MonitorThread;
+    std::thread m_KeySocketThread;
 
     std::mutex m_ClientsLock;
     std::vector<std::string> m_ConnectedClients;
     std::vector<std::string> m_PrevConnectedClients;
     std::unique_ptr<ConnectionMonitor> m_ConnectionMonitor;
+
+    std::array<char, 41> m_PublicKey;
+    std::array<char, 41> m_PrivateKey;
 
     Options m_Options;
 };

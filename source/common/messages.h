@@ -6,6 +6,8 @@ enum class MessageType : unsigned int
 {
     GenericMessage,
     Heartbeat,
+    KeyRequest,
+    KeyResponse,
 };
 
 class Message
@@ -61,4 +63,39 @@ public:
     {
         super::serialize(serializer);
     }
+};
+
+class KeyRequestMessage final : public Message
+{
+    using super = Message;
+
+public:
+    MessageType GetType() const override { return MessageType::KeyRequest; }
+
+    template<class TSerializer>
+    void serialize(TSerializer& serializer)
+    {
+        super::serialize(serializer);
+    }
+};
+
+class KeyResponseMessage final : public Message
+{
+    using super = Message;
+
+public:
+    MessageType GetType() const override { return MessageType::KeyResponse; }
+
+    template<class TSerializer>
+    void serialize(TSerializer& serializer)
+    {
+        super::serialize(serializer);
+        serializer(CEREAL_NVP(m_Key));
+    }
+
+    const std::string& GetKey() const { return m_Key; }
+    void SetKey(const std::string& key) { m_Key = key; }
+
+private:
+    std::string m_Key;
 };

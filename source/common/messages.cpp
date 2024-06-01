@@ -31,6 +31,12 @@ std::shared_ptr<Message> Message::Serialize(const std::stringstream& stream)
     case MessageType::Heartbeat:
         return SerializeMessage<HeartbeatMessage>(stream);
 
+    case MessageType::KeyRequest:
+        return SerializeMessage<KeyRequestMessage>(stream);
+
+    case MessageType::KeyResponse:
+        return SerializeMessage<KeyResponseMessage>(stream);
+
     default:
         assert(false);
     };

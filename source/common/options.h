@@ -10,6 +10,7 @@ struct Options
         std::string host = "localhost";
         std::string identity;
         int port = 32000;
+        bool secure;
     } client;
 
     struct
@@ -17,6 +18,7 @@ struct Options
         std::string host = "*";
         std::string identity;
         int port = 32000;
+        bool secure;
     } server;
 
     struct

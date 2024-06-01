@@ -24,6 +24,8 @@ private:
     void Monitor();
     void HandleClientConnected(const std::string& identity);
     void HandleClientDisconnected(const zmq_event_t& zmqEvent, const char* addr);
+    
+    bool ConfigureCurve();
 
 private:
     const int m_Port;

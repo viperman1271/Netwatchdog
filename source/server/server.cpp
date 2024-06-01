@@ -30,6 +30,13 @@ void NetWatchdogServer::Run()
         m_ServerSocket.set(zmq::sockopt::linger, static_cast<int>(lingerMs));
 
         zmq_socket_monitor(m_ServerSocket, "inproc://monitor", ZMQ_EVENT_CONNECTED | ZMQ_EVENT_DISCONNECTED);
+
+        std::cout << "Generating keypairs" << std::endl;
+
+        if (!ConfigureCurve())
+        {
+            return;
+        }
         
         std::stringstream ss;
         ss << "tcp://" << m_ListenAddress << ":" << m_Port;
@@ -172,4 +179,25 @@ void NetWatchdogServer::HandleClientDisconnected(const zmq_event_t& zmqEvent, co
     }
 
     m_PrevConnectedClients.clear();
+}
+
+bool NetWatchdogServer::ConfigureCurve()
+{
+    if (!zmq_has("curve"))
+    {
+        return false;
+    }
+
+    std::array<char, 41> public_key;
+    std::array<char, 41> secret_key;
+    zmq_curve_keypair(public_key.data(), secret_key.data());
+    //zmq::curve_keypair(public_key.data(), secret_key.data());
+    
+    m_ServerSocket.set(zmq::sockopt::curve_server, true);
+    m_ServerSocket.set(zmq::sockopt::curve_publickey, "");
+    m_ServerSocket.set(zmq::sockopt::curve_secretkey, "");
+
+    //Bzmq::curve_server_t a;
+
+    return true;
 }

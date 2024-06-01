@@ -1,5 +1,7 @@
 #include "utils.h"
 
+#include "tests.h"
+
 #include <cstdlib> 
 #include <cstring>
 
@@ -34,6 +36,12 @@ namespace Utils
 
     const std::filesystem::path& GetBasePath()
     {
+        if (Tests::IsTestMode())
+        {
+            static std::filesystem::path path = std::filesystem::current_path();
+            return path;
+        }
+
 #ifdef _WIN32
         std::string homeDir = GetEnvVar("USERPROFILE");
 #else

@@ -8,8 +8,6 @@
 
 class NetWatchdogServer final
 {
-
-
     ConnectionMonitor m_ConnectionMonitor;
 };
 
@@ -25,6 +23,9 @@ public:
 
     NetWatchdogClient(const NetWatchdogServer&) = delete;
     NetWatchdogClient(NetWatchdogServer&&) = delete;
+
+private:
+    bool ConfigureCurve();
 
 private:
     const int m_Port;

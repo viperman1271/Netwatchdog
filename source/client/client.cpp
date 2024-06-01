@@ -30,6 +30,8 @@ void NetWatchdogClient::Run(bool runThread)
 
     m_Socket.set(zmq::sockopt::identity, m_Identity);
 
+    ConfigureCurve();
+
     std::stringstream ss;
     ss << "tcp://" << m_Host << ":" << m_Port;
     std::cout << "Connecting client to " << ss.str() << std::endl;
@@ -89,4 +91,46 @@ void NetWatchdogClient::Wait()
     {
         m_Thread.join();
     }
+}
+
+bool NetWatchdogClient::ConfigureCurve()
+{
+    if (!zmq_has("curve"))
+    {
+        return false;
+    }
+
+    std::array<char, 41> public_key;
+    std::array<char, 41> secret_key;
+    zmq_curve_keypair(public_key.data(), secret_key.data());
+
+    m_Socket.set(zmq::sockopt::curve_server, false);
+    m_Socket.set(zmq::sockopt::curve_publickey, public_key.data());
+    m_Socket.set(zmq::sockopt::curve_secretkey, secret_key.data());
+
+    zmq::socket_t socket = zmq::socket_t(m_Context, zmq::socket_type::dealer);
+
+    const unsigned long long timeoutMs = std::chrono::duration_cast<std::chrono::milliseconds>(10s).count();
+    socket.set(zmq::sockopt::rcvtimeo, static_cast<int>(timeoutMs));
+
+    const unsigned long long lingerMs = std::chrono::duration_cast<std::chrono::milliseconds>(1s).count();
+    socket.set(zmq::sockopt::linger, static_cast<int>(lingerMs));
+
+    socket.set(zmq::sockopt::identity, m_Identity);
+
+    std::stringstream ss;
+    ss << "tcp://" << m_Host << ":" << m_Port + 1;
+    std::cout << "Connecting client to " << ss.str() << std::endl;
+
+    socket.connect(ss.str());
+
+    KeyRequestMessage msg;
+    Communication::SendMessage(msg, socket);
+
+    if (std::shared_ptr<KeyResponseMessage> heartbeatMsg = Communication::RecvMessage<KeyResponseMessage, MessageType::KeyResponse>(socket))
+    {
+        m_Socket.set(zmq::sockopt::curve_serverkey, heartbeatMsg->GetKey());
+    }
+
+    return true;
 }

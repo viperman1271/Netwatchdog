@@ -82,6 +82,24 @@ namespace Utils
         return path;
     }
 
+    const std::filesystem::path& GetWebFileServingPath()
+    {
+        static bool isInit = false;
+        static std::filesystem::path path;
+        if (!isInit)
+        {
+#ifdef _WIN32
+            path = GetBasePath();
+#else
+            path = "/var/netwatchdog/";
+#endif
+            path /= "www/";
+            isInit = true;
+        }
+
+        return path;
+    }
+
     void SetThreadName(std::thread& thread, const std::string& name)
     {
 #ifdef _WIN32

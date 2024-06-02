@@ -10,6 +10,7 @@ namespace Utils
     std::string GetEnvVar(const char* envVariable);
     const std::filesystem::path& GetBasePath();
     const std::filesystem::path& GetConfigPath();
+    const std::filesystem::path& GetWebFileServingPath();
 
     void SetThreadName(std::thread& thread, const std::string& name);
     void SetThreadName(const std::string& name);

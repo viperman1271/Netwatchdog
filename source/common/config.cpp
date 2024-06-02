@@ -92,7 +92,7 @@ namespace Config
         ConfigureDefaultValue(config, "web", "port", 8080);
         ConfigureDefaultValue(config, "web", "secure", true);
         ConfigureDefaultValue(config, "web", "secure_port", 443);
-        ConfigureDefaultValue(config, "web", "serving_dir", Utils::GetBasePath().string());
+        ConfigureDefaultValue(config, "web", "serving_dir", Utils::GetWebFileServingPath().string());
         ConfigureDefaultValue(config, "web", "private_key_path", "private_key.pem");
         ConfigureDefaultValue(config, "web", "public_key_path", "public_key.pem");
         ConfigureDefaultValue(config, "web", "certificate_path", "certificate.pem");

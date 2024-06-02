@@ -2,10 +2,12 @@ FROM ubuntu
 
 WORKDIR /bin
 
-COPY . .
+COPY web .
 
-ENV PORT=8080
+COPY data/ ../var/netwatchdog/www/
 
-EXPOSE 8080
+ENV PORT=443
+
+EXPOSE 443
 
 CMD [ "/bin/web" ]

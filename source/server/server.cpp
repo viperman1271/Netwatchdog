@@ -22,20 +22,39 @@ void NetWatchdogServer::Run()
     zmq::context_t context(1);
     {
         m_ServerSocket = zmq::socket_t(context, zmq::socket_type::router);
+        m_KeySocket = zmq::socket_t(context, zmq::socket_type::router);
 
         const unsigned long long timeoutMs = std::chrono::duration_cast<std::chrono::milliseconds>(1s).count();
         m_ServerSocket.set(zmq::sockopt::rcvtimeo, static_cast<int>(timeoutMs));
+        m_KeySocket.set(zmq::sockopt::rcvtimeo, static_cast<int>(timeoutMs));
 
         const unsigned long long lingerMs = std::chrono::duration_cast<std::chrono::milliseconds>(1s).count();
         m_ServerSocket.set(zmq::sockopt::linger, static_cast<int>(lingerMs));
+        m_KeySocket.set(zmq::sockopt::linger, static_cast<int>(lingerMs));
 
         zmq_socket_monitor(m_ServerSocket, "inproc://monitor", ZMQ_EVENT_CONNECTED | ZMQ_EVENT_DISCONNECTED);
+
+        std::cout << "Generating keypairs" << std::endl;
+
+        if (m_Options.server.secure && !ConfigureCurve())
+        {
+            return;
+        }
         
         std::stringstream ss;
         ss << "tcp://" << m_ListenAddress << ":" << m_Port;
         std::cout << "Binding server to " << ss.str() << std::endl;
 
         m_ServerSocket.bind(ss.str());
+
+        if (m_Options.server.secure)
+        {
+            std::stringstream ss;
+            ss << "tcp://" << m_ListenAddress << ":" << m_Port + 1;
+            std::cout << "Binding server to " << ss.str() << std::endl;
+
+            m_KeySocket.bind(ss.str());
+        }
     }
 
     {
@@ -47,6 +66,24 @@ void NetWatchdogServer::Run()
 		{
 			Monitor();
 		});
+    }
+
+    if (m_Options.server.secure)
+    {
+        m_KeySocketThread = std::thread([this]()
+        {
+            while (m_ShouldContinue.load())
+            {
+                std::string identity;
+                std::shared_ptr<KeyRequestMessage> msg = Communication::RecvMessage<KeyRequestMessage, MessageType::KeyRequest>(m_KeySocket, identity);
+                if (msg != nullptr)
+                {
+                    KeyResponseMessage respMessage;
+                    respMessage.SetKey({ m_PublicKey.data() });
+                    Communication::SendMessage(respMessage, m_KeySocket, identity);
+                }
+            }
+        });
     }
 
     while (m_ShouldContinue.load())
@@ -74,6 +111,11 @@ void NetWatchdogServer::Run()
     if (m_MonitorThread.joinable())
     {
         m_MonitorThread.join();
+    }
+
+    if (m_Options.server.secure && m_KeySocketThread.joinable())
+    {
+        m_KeySocketThread.join();
     }
 }
 
@@ -172,4 +214,20 @@ void NetWatchdogServer::HandleClientDisconnected(const zmq_event_t& zmqEvent, co
     }
 
     m_PrevConnectedClients.clear();
+}
+
+bool NetWatchdogServer::ConfigureCurve()
+{
+    if (!zmq_has("curve"))
+    {
+        return false;
+    }
+
+    zmq_curve_keypair(m_PublicKey.data(), m_PrivateKey.data());
+    
+    m_ServerSocket.set(zmq::sockopt::curve_server, true);
+    m_ServerSocket.set(zmq::sockopt::curve_publickey, m_PublicKey.data());
+    m_ServerSocket.set(zmq::sockopt::curve_secretkey, m_PrivateKey.data());
+
+    return true;
 }

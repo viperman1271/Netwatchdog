@@ -45,9 +45,13 @@ int main(int argc, char** argv)
 
         for (unsigned int i = 0; i < options.client.count; ++i)
         {
+            Options optionsCopy = options;
+            
             std::stringstream ss;
             ss << options.client.identity << i;
-            clients.push_back(std::unique_ptr<NetWatchdogClient>{ new NetWatchdogClient(options.client.host, ss.str(), options.client.port) });
+            optionsCopy.client.identity = ss.str();
+            
+            clients.push_back(std::unique_ptr<NetWatchdogClient>{ new NetWatchdogClient(optionsCopy) });
             clients[i]->Run(true);
         }
 
@@ -58,7 +62,7 @@ int main(int argc, char** argv)
     }
     else
     {
-        NetWatchdogClient client(options.client.host, options.client.identity, options.client.port);
+        NetWatchdogClient client(options);
 
         g_CallbackFunc = [&client]()
         {

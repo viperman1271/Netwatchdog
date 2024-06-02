@@ -35,6 +35,7 @@ find_package(nlohmann_json CONFIG REQUIRED)
 find_package(OpenSSL REQUIRED)
 find_package(stduuid CONFIG REQUIRED)
 find_package(toml11 CONFIG REQUIRED)
+find_package(ZeroMQ CONFIG REQUIRED)
 
 # Enable testing
 enable_testing()
@@ -63,14 +64,14 @@ include_directories(${NETWATCHDOG_DATABASE_SRC_DIR})
 set(NETWATCHDOG_COMMON_TEST_SRC_DIR ${CMAKE_SOURCE_DIR}/source/tests/common)
 file(GLOB LIBNETWATCHDOG_TEST_SOURCES ${NETWATCHDOG_COMMON_TEST_SRC_DIR}/*.*)
 add_executable(libwatchdog_tests ${LIBNETWATCHDOG_TEST_SOURCES})
-target_link_libraries(libwatchdog_tests PRIVATE Catch2::Catch2WithMain libnetwatchdog)
+target_link_libraries(libwatchdog_tests PRIVATE Catch2::Catch2WithMain libnetwatchdog libzmq-static)
 target_compile_definitions(libwatchdog_tests PRIVATE NETWATCHDOG_CLIENT)
 
 # Client executable
 set(NETWATCHDOGC_SRC_DIR ${CMAKE_SOURCE_DIR}/source/client)
 add_executable(netwatchdogc ${NETWATCHDOGC_SRC_DIR}/main.cpp ${NETWATCHDOGC_SRC_DIR}/client.h ${NETWATCHDOGC_SRC_DIR}/client.cpp)
-target_link_libraries(netwatchdogc libnetwatchdog cppzmq)
-target_compile_definitions(netwatchdogc PRIVATE NETWATCHDOG_CLIENT)
+target_link_libraries(netwatchdogc libnetwatchdog cppzmq-static libzmq-static)
+target_compile_definitions(netwatchdogc PRIVATE NETWATCHDOG_CLIENT ZMQ_HAVE_CURVE)
 
 # Server executable
 set(NETWATCHDOGD_SRC_DIR ${CMAKE_SOURCE_DIR}/source/server)
@@ -79,8 +80,8 @@ include_directories(${NETWATCHDOGD_SRC_DIR} ${NETWATCHDOG_COMMON_SRC_DIR})
 file(GLOB NETWATCHDOGD_SOURCES ${NETWATCHDOGD_SRC_DIR}/*.*)
 
 add_executable(netwatchdogd ${NETWATCHDOGD_SOURCES})
-target_link_libraries(netwatchdogd PRIVATE libnetwatchdog cereal::cereal cppzmq toml11::toml11)
-target_compile_definitions(netwatchdogd PRIVATE NETWATCHDOG_SERVER)
+target_link_libraries(netwatchdogd PRIVATE libnetwatchdog cereal::cereal cppzmq-static libzmq-static toml11::toml11)
+target_compile_definitions(netwatchdogd PRIVATE NETWATCHDOG_SERVER ZMQ_HAVE_CURVE)
 
 # Web Lib
 set(NETWATCHDOG_LIBWEB_SRC_DIR ${CMAKE_SOURCE_DIR}/source/libweb)
@@ -131,6 +132,9 @@ set_target_properties(web PROPERTIES FOLDER "netwatchdog")
 set_target_properties(admin PROPERTIES FOLDER "netwatchdog")
 set_target_properties(libwatchdog_tests PROPERTIES FOLDER "netwatchdog/tests")
 set_target_properties(web_tests PROPERTIES FOLDER "netwatchdog/tests")
+
+set_target_properties(bcrypt PROPERTIES FOLDER "extern")
+set_target_properties(bcrypt_test PROPERTIES FOLDER "extern/tests")
 
 # Add tests
 catch_discover_tests(libwatchdog_tests)

@@ -13,6 +13,10 @@
         "nlohmann-json",
         "openssl",
         "stduuid",
-        "toml11"
+        "toml11",
+        {
+          "name": "zeromq",
+          "features": [ "curve", "sodium" ]
+        }
     ]
 }

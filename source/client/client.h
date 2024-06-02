@@ -1,6 +1,7 @@
 #pragma once
 
 #include "monitor.h"
+#include "options.h"
 
 #include <zmq.hpp>
 
@@ -8,15 +9,13 @@
 
 class NetWatchdogServer final
 {
-
-
     ConnectionMonitor m_ConnectionMonitor;
 };
 
 class NetWatchdogClient final
 {
 public:
-    NetWatchdogClient(const std::string& host, const std::string& identity, int port = 32000);
+    NetWatchdogClient(const Options& options);
     ~NetWatchdogClient() = default;
 
     void Run(bool runThread = false);
@@ -25,6 +24,9 @@ public:
 
     NetWatchdogClient(const NetWatchdogServer&) = delete;
     NetWatchdogClient(NetWatchdogServer&&) = delete;
+
+private:
+    bool ConfigureCurve();
 
 private:
     const int m_Port;
@@ -36,4 +38,6 @@ private:
     zmq::context_t m_Context;
     zmq::socket_t m_Socket;
     std::thread m_Thread;
+
+    const Options m_Options;
 };

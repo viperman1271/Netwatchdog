@@ -9,13 +9,15 @@
 
 using namespace std::chrono_literals;
 
-NetWatchdogClient::NetWatchdogClient(const std::string& host, const std::string& identity, int port /*= 32000*/)
-    : m_Port(port)
-    , m_Host(host)
-    , m_Identity(identity)
+NetWatchdogClient::NetWatchdogClient(const Options& options)
+    : m_Port(options.client.port)
+    , m_Host(options.client.host)
+    , m_Identity(options.client.identity)
     , m_ShouldContinue(true)
     , m_Context(1)
+    , m_Options(options)
 {
+
 }
 
 void NetWatchdogClient::Run(bool runThread)
@@ -29,6 +31,11 @@ void NetWatchdogClient::Run(bool runThread)
     m_Socket.set(zmq::sockopt::linger, static_cast<int>(lingerMs));
 
     m_Socket.set(zmq::sockopt::identity, m_Identity);
+
+    if (m_Options.client.secure && !ConfigureCurve())
+    {
+        return;
+    }
 
     std::stringstream ss;
     ss << "tcp://" << m_Host << ":" << m_Port;
@@ -89,4 +96,46 @@ void NetWatchdogClient::Wait()
     {
         m_Thread.join();
     }
+}
+
+bool NetWatchdogClient::ConfigureCurve()
+{
+    if (!zmq_has("curve"))
+    {
+        return false;
+    }
+
+    std::array<char, 41> public_key;
+    std::array<char, 41> secret_key;
+    zmq_curve_keypair(public_key.data(), secret_key.data());
+
+    m_Socket.set(zmq::sockopt::curve_server, false);
+    m_Socket.set(zmq::sockopt::curve_publickey, public_key.data());
+    m_Socket.set(zmq::sockopt::curve_secretkey, secret_key.data());
+
+    zmq::socket_t socket = zmq::socket_t(m_Context, zmq::socket_type::dealer);
+
+    const unsigned long long timeoutMs = std::chrono::duration_cast<std::chrono::milliseconds>(10s).count();
+    socket.set(zmq::sockopt::rcvtimeo, static_cast<int>(timeoutMs));
+
+    const unsigned long long lingerMs = std::chrono::duration_cast<std::chrono::milliseconds>(1s).count();
+    socket.set(zmq::sockopt::linger, static_cast<int>(lingerMs));
+
+    socket.set(zmq::sockopt::identity, m_Identity);
+
+    std::stringstream ss;
+    ss << "tcp://" << m_Host << ":" << m_Port + 1;
+    std::cout << "Connecting client to " << ss.str() << std::endl;
+
+    socket.connect(ss.str());
+
+    KeyRequestMessage msg;
+    Communication::SendMessage(msg, socket);
+
+    if (std::shared_ptr<KeyResponseMessage> heartbeatMsg = Communication::RecvMessage<KeyResponseMessage, MessageType::KeyResponse>(socket))
+    {
+        m_Socket.set(zmq::sockopt::curve_serverkey, heartbeatMsg->GetKey());
+    }
+
+    return true;
 }

@@ -37,5 +37,6 @@ mkdir tmp/web
 cd ./tmp/web
 cp ../../bin/web .
 cp ../../docker/web/* .
+cp -r ../../data .
 docker build -t viperman1271/netwatchdog-web:0.1 .
 ```

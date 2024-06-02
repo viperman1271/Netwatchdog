@@ -140,6 +140,7 @@ jobs:
           cp ${{ github.workspace }}/bin/netwatchdogc ${{ github.workspace }}/tmp/client/.
           cp ${{ github.workspace }}/docker/client/* ${{ github.workspace }}/tmp/client/.
           cp ${{ github.workspace }}/bin/web ${{ github.workspace }}/tmp/web/.
+          cp -r ${{ github.workspace }}/data/* ${{ github.workspace }}/tmp/web/.
           cp ${{ github.workspace }}/docker/web/* ${{ github.workspace }}/tmp/web/.
       
       - name: Set up Docker Buildx

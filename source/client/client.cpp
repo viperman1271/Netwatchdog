@@ -9,13 +9,15 @@
 
 using namespace std::chrono_literals;
 
-NetWatchdogClient::NetWatchdogClient(const std::string& host, const std::string& identity, int port /*= 32000*/)
-    : m_Port(port)
-    , m_Host(host)
-    , m_Identity(identity)
+NetWatchdogClient::NetWatchdogClient(const Options& options)
+    : m_Port(options.client.port)
+    , m_Host(options.client.host)
+    , m_Identity(options.client.identity)
     , m_ShouldContinue(true)
     , m_Context(1)
+    , m_Options(options)
 {
+
 }
 
 void NetWatchdogClient::Run(bool runThread)
@@ -30,7 +32,10 @@ void NetWatchdogClient::Run(bool runThread)
 
     m_Socket.set(zmq::sockopt::identity, m_Identity);
 
-    ConfigureCurve();
+    if (m_Options.client.secure && !ConfigureCurve())
+    {
+        return;
+    }
 
     std::stringstream ss;
     ss << "tcp://" << m_Host << ":" << m_Port;

@@ -61,8 +61,16 @@ bool WebServer::Run()
         return fileServingDir.string();
     };
 
-    svr->set_mount_point("/images", func("images"));
+    const std::string imagesPath = func("images");
+    std::cout << "Serving /images from " << imagesPath;
+    svr->set_mount_point("/images", imagesPath);
+
+    const std::string scriptsPath = func("scripts");
+    std::cout << "Serving /scripts from " << scriptsPath;
     svr->set_mount_point("/scripts", func("scripts"));
+
+    const std::string stylesPath = func("styles");
+    std::cout << "Serving /styles from " << stylesPath;
     svr->set_mount_point("/styles", func("styles"));
 
     svr->Get("/", [&](const httplib::Request& req, httplib::Response& res)
@@ -369,6 +377,7 @@ std::string WebServer::ConvertHighResRepToString(std::chrono::system_clock::dura
 
 bool WebServer::GenerateKeyAndCertificate() const
 {
+    std::cout << "Generate public/private key & certificate" << std::endl;
     std::unique_ptr<EVP_PKEY_CTX, decltype(&EVP_PKEY_CTX_free)> ctx(EVP_PKEY_CTX_new_id(EVP_PKEY_RSA, NULL), EVP_PKEY_CTX_free);
     if (!ctx) 
     {
@@ -397,6 +406,9 @@ bool WebServer::GenerateKeyAndCertificate() const
     {
         return false;
     }
+
+    std::cout << "Saved public key to : " << m_Options.web.publicKeyPath << std::endl;
+    std::cout << "Saved private key to : " << m_Options.web.privateKeyPath << std::endl;
 
     // Generate the X509 certificate
     std::unique_ptr<X509, decltype(&X509_free)> x509(X509_new(), X509_free);
@@ -457,6 +469,8 @@ bool WebServer::WriteCertificate(X509* const x509) const
     FILE* x509_file = fopen(m_Options.web.certificatePath.c_str(), "wb");
     PEM_write_X509(x509_file, x509);
     fclose(x509_file);
+
+    std::cout << "Saved certificate file to : " << m_Options.web.certificatePath << std::endl;
 
     return true;
 }

@@ -173,11 +173,25 @@ namespace Config
 
         if (parsingType == ParsingType::Web)
         {
-            app.add_flag("-s,--secure", options.web.secure, "Whether secure communications (i.e https) should be used [defaults to true]");
             app.add_option("--secure_port", options.web.securePort, "The web secure port to use [defaults to 443]");
             app.add_option("--private_key", options.web.privateKeyPath, "Path to find the private key for SSL cert");
             app.add_option("--public_key", options.web.publicKeyPath, "Path to find the public key for SSL cert");
             app.add_option("--certificate", options.web.certificatePath, "Path to find the certificate for SSL cert");
+        }
+
+        switch (parsingType)
+        {
+        case ParsingType::Client:
+            app.add_flag("-s,--secure", options.client.secure, "Whether secure communications (i.e https) should be used [defaults to true]");
+            break;
+
+        case ParsingType::Server:
+            app.add_flag("-s,--secure", options.server.secure, "Whether secure communications (i.e https) should be used [defaults to true]");
+            break;
+
+        case ParsingType::Web:
+            app.add_flag("-s,--secure", options.web.secure, "Whether secure communications (i.e https) should be used [defaults to true]");
+            break;
         }
 
         try

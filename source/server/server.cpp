@@ -47,11 +47,14 @@ void NetWatchdogServer::Run()
 
         m_ServerSocket.bind(ss.str());
 
-        ss = {};
-        ss << "tcp://" << m_ListenAddress << ":" << m_Port + 1;
-        std::cout << "Binding server to " << ss.str() << std::endl;
+        if (m_Options.server.secure)
+        {
+            std::stringstream ss;
+            ss << "tcp://" << m_ListenAddress << ":" << m_Port + 1;
+            std::cout << "Binding server to " << ss.str() << std::endl;
 
-        m_KeySocket.bind(ss.str());
+            m_KeySocket.bind(ss.str());
+        }
     }
 
     {
@@ -65,20 +68,23 @@ void NetWatchdogServer::Run()
 		});
     }
 
-    m_KeySocketThread = std::thread([this]()
+    if (m_Options.server.secure)
     {
-        while (m_ShouldContinue.load())
+        m_KeySocketThread = std::thread([this]()
         {
-            std::string identity;
-            std::shared_ptr<KeyRequestMessage> msg = Communication::RecvMessage<KeyRequestMessage, MessageType::KeyRequest>(m_KeySocket, identity);
-            if (msg != nullptr)
+            while (m_ShouldContinue.load())
             {
-                KeyResponseMessage respMessage;
-                respMessage.SetKey({ m_PublicKey.data() });
-                Communication::SendMessage(respMessage, m_KeySocket, identity);
+                std::string identity;
+                std::shared_ptr<KeyRequestMessage> msg = Communication::RecvMessage<KeyRequestMessage, MessageType::KeyRequest>(m_KeySocket, identity);
+                if (msg != nullptr)
+                {
+                    KeyResponseMessage respMessage;
+                    respMessage.SetKey({ m_PublicKey.data() });
+                    Communication::SendMessage(respMessage, m_KeySocket, identity);
+                }
             }
-        }
-    });
+        });
+    }
 
     while (m_ShouldContinue.load())
     {
@@ -105,6 +111,11 @@ void NetWatchdogServer::Run()
     if (m_MonitorThread.joinable())
     {
         m_MonitorThread.join();
+    }
+
+    if (m_Options.server.secure && m_KeySocketThread.joinable())
+    {
+        m_KeySocketThread.join();
     }
 }
 

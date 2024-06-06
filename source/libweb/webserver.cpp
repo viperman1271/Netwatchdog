@@ -5,25 +5,25 @@
 WebServer::WebServer(const Options& options)
     : m_Options(options)
 {
-    std::filesystem::path certificatePath(m_Options.web.certificatePath);
+    std::filesystem::path certificatePath(*m_Options.web.certificatePath);
     if (!certificatePath.is_absolute())
     {
         std::filesystem::path basePath = Utils::GetBasePath();
-        m_Options.web.certificatePath = basePath.append(m_Options.web.certificatePath).string();
+        m_Options.web.certificatePath = basePath.append(*m_Options.web.certificatePath).string();
     }
 
-    std::filesystem::path privateyKeyPath(m_Options.web.privateKeyPath);
+    std::filesystem::path privateyKeyPath(*m_Options.web.privateKeyPath);
     if (!privateyKeyPath.is_absolute())
     {
         std::filesystem::path basePath = Utils::GetBasePath();
-        m_Options.web.privateKeyPath = basePath.append(m_Options.web.privateKeyPath).string();
+        m_Options.web.privateKeyPath = basePath.append(*m_Options.web.privateKeyPath).string();
     }
 
-    std::filesystem::path publicKeyPath(m_Options.web.publicKeyPath);
+    std::filesystem::path publicKeyPath(*m_Options.web.publicKeyPath);
     if (!publicKeyPath.is_absolute())
     {
         std::filesystem::path basePath = Utils::GetBasePath();
-        m_Options.web.publicKeyPath = basePath.append(m_Options.web.publicKeyPath).string();
+        m_Options.web.publicKeyPath = basePath.append(*m_Options.web.publicKeyPath).string();
     }
 }
 
@@ -41,22 +41,22 @@ bool WebServer::Run()
     std::unique_ptr<httplib::Server> svr;
     if (m_Options.web.secure)
     {
-        if (!std::filesystem::exists(m_Options.web.certificatePath) || !std::filesystem::exists(m_Options.web.privateKeyPath) || !std::filesystem::exists(m_Options.web.publicKeyPath))
+        if (!std::filesystem::exists(*m_Options.web.certificatePath) || !std::filesystem::exists(*m_Options.web.privateKeyPath) || !std::filesystem::exists(*m_Options.web.publicKeyPath))
         {
             GenerateKeyAndCertificate();
         }
 
-        svr.reset(new httplib::SSLServer(m_Options.web.certificatePath.c_str(), m_Options.web.privateKeyPath.c_str()));
+        svr.reset(new httplib::SSLServer(m_Options.web.certificatePath->c_str(), m_Options.web.privateKeyPath->c_str()));
     }
     else
     {
         svr.reset(new httplib::Server);
     }
 
-    std::filesystem::path fileServingDir = m_Options.web.fileServingDir;
+    std::filesystem::path fileServingDir(*m_Options.web.fileServingDir);
     std::function<std::string(const std::string&)> func = [&](const std::string& str)
     {
-        std::filesystem::path fileServingDir = m_Options.web.fileServingDir;
+        std::filesystem::path fileServingDir(*m_Options.web.fileServingDir);
         fileServingDir /= str;
         return fileServingDir.string();
     };
@@ -75,7 +75,7 @@ bool WebServer::Run()
 
     svr->Get("/", [&](const httplib::Request& req, httplib::Response& res)
     {
-        std::filesystem::path filePath = m_Options.web.fileServingDir;
+        std::filesystem::path filePath(*m_Options.web.fileServingDir);
         filePath /= "index.html";
 
         std::string content;
@@ -85,7 +85,7 @@ bool WebServer::Run()
 
     std::function<std::filesystem::path(const std::string&)> templateFunc = [&](const std::string& templateName)
     {
-        std::filesystem::path fileServingDir = m_Options.web.fileServingDir;
+        std::filesystem::path fileServingDir(*m_Options.web.fileServingDir);
         fileServingDir /= "templates";
         fileServingDir /= templateName;
         return fileServingDir;
@@ -100,7 +100,7 @@ bool WebServer::Run()
 
     svr->Get("/dashboard.html", [&](const httplib::Request& req, httplib::Response& res)
     {
-        std::filesystem::path filePath = m_Options.web.fileServingDir;
+        std::filesystem::path filePath(*m_Options.web.fileServingDir);
         filePath /= "dashboard.html";
 
         std::string content;
@@ -183,7 +183,7 @@ bool WebServer::Run()
     {
         const std::string file = req.matches[1];
 
-        std::filesystem::path filePath = m_Options.web.fileServingDir;
+        std::filesystem::path filePath(*m_Options.web.fileServingDir);
         filePath /= file;
 
         std::string content;
@@ -432,7 +432,7 @@ bool WebServer::GenerateKeyAndCertificate() const
 
 bool WebServer::WritePublicKey(EVP_PKEY* const pkey) const
 {
-    std::unique_ptr<BIO, decltype(&BIO_free_all)> bp_public(BIO_new_file(m_Options.web.publicKeyPath.c_str(), "w+"), BIO_free_all);
+    std::unique_ptr<BIO, decltype(&BIO_free_all)> bp_public(BIO_new_file(m_Options.web.publicKeyPath->c_str(), "w+"), BIO_free_all);
     if (!bp_public)
     {
         return false;
@@ -449,7 +449,7 @@ bool WebServer::WritePublicKey(EVP_PKEY* const pkey) const
 bool WebServer::WritePrivateKey(EVP_PKEY* const pkey) const
 {
     // 5. Save the private key to a file
-    std::unique_ptr<BIO, decltype(&BIO_free_all)> bp_private(BIO_new_file(m_Options.web.privateKeyPath.c_str(), "w+"), BIO_free_all);
+    std::unique_ptr<BIO, decltype(&BIO_free_all)> bp_private(BIO_new_file(m_Options.web.privateKeyPath->c_str(), "w+"), BIO_free_all);
     if (!bp_private)
     {
         return false;
@@ -466,7 +466,7 @@ bool WebServer::WritePrivateKey(EVP_PKEY* const pkey) const
 bool WebServer::WriteCertificate(X509* const x509) const
 {
     // Write the certificate to a file
-    FILE* x509_file = fopen(m_Options.web.certificatePath.c_str(), "wb");
+    FILE* x509_file = fopen(m_Options.web.certificatePath->c_str(), "wb");
     PEM_write_X509(x509_file, x509);
     fclose(x509_file);
 

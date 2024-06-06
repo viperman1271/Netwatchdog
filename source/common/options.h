@@ -1,51 +1,52 @@
 #pragma once
 
-#include <string>
+#include "configurableoption.h"
+#include "utils.h"
 
 struct Options
 {
     struct
     {
-        unsigned int count = 1;
-        std::string host = "localhost";
-        std::string identity;
-        int port = 32000;
-        bool secure;
+        ConfigurableOption<unsigned int> count{ 1 };
+        ConfigurableOption<std::string> host{ "localhost" };
+        ConfigurableOption<std::string> identity{ uuids::to_string(uuids::uuid_random_generator(g_RNG)()) };
+        ConfigurableOption<int> port{ 32000 };
+        ConfigurableOption<bool> secure{ true };
     } client;
 
     struct
     {
-        std::string host = "*";
-        std::string identity;
-        int port = 32000;
-        bool secure;
+        ConfigurableOption<std::string> host{ "*" };
+        ConfigurableOption<std::string> identity{ uuids::to_string(uuids::uuid_random_generator(g_RNG)()) };
+        ConfigurableOption<int> port{ 32000 };
+        ConfigurableOption<bool> secure{ true };
     } server;
 
     struct
     {
-        std::string username;
-        std::string password;
-        std::string host;
-        int port;
+        ConfigurableOption<std::string> username{ "root" };
+        ConfigurableOption<std::string> password;
+        ConfigurableOption<std::string> host{ "localhost" };
+        ConfigurableOption<int> port{ true };
     } database;
 
     struct
     {
-        std::string fileServingDir;
-        std::string host;
-        std::string privateKeyPath;
-        std::string publicKeyPath;
-        std::string certificatePath;
-        int port;
-        int securePort;
-        bool secure;
+        ConfigurableOption<std::string> fileServingDir{ Utils::GetWebFileServingPath().string() };
+        ConfigurableOption<std::string> host{ "0.0.0.0" };
+        ConfigurableOption<std::string> privateKeyPath{ "private_key.pem" };
+        ConfigurableOption<std::string> publicKeyPath{ "public_key.pem" };
+        ConfigurableOption<std::string> certificatePath{ "certificate.pem" };
+        ConfigurableOption<int> port{ 80 };
+        ConfigurableOption<int> securePort{ 443 };
+        ConfigurableOption<bool> secure{ true };
     } web;
 
     struct
     {
-        std::string userToCreate;
-        std::string userPassword;
-        bool direct;
-        bool userIsAdmin;
+        ConfigurableOption<std::string> userToCreate;
+        ConfigurableOption<std::string> userPassword;
+        ConfigurableOption<bool> direct{ true };
+        ConfigurableOption<bool> userIsAdmin;
     } admin;
 };

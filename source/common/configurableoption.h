@@ -21,7 +21,7 @@ public:
     {
     }
 
-    explicit ConfigurableOption(const T& value) requires !std::is_trivially_constructible_v<T>
+    explicit ConfigurableOption(const T& value) requires (!std::is_trivially_constructible_v<T>)
         : m_FromEnv(false)
         , m_FromConfig(false)
         , m_FromCommandLine(false)
@@ -56,7 +56,7 @@ public:
         }
     }
 
-    void Init(const toml::value& config, const std::pair<std::string, std::string>& configPath, const std::string& envVar = {}) requires !std::is_trivially_constructible_v<T>
+    void Init(const toml::value& config, const std::pair<std::string, std::string>& configPath, const std::string& envVar = {}) requires (!std::is_trivially_constructible_v<T>)
     {
         if (ConfigureIfEnvVarNotEmpty(envVar))
         {
@@ -82,22 +82,22 @@ public:
         return m_Value;
     }
 
-    operator const T& () const requires !std::is_trivially_constructible_v<T>
+    operator const T& () const requires (!std::is_trivially_constructible_v<T>)
     {
         return m_Value;
     }
 
-    operator T& () requires !std::is_trivially_constructible_v<T>
+    operator T& () requires (!std::is_trivially_constructible_v<T>)
     {
         return m_Value;
     }
 
-    const T& operator*() const requires !std::is_trivially_constructible_v<T>
+    const T& operator*() const requires (!std::is_trivially_constructible_v<T>)
     {
         return m_Value;
     }
 
-    T& operator*() requires !std::is_trivially_constructible_v<T>
+    T& operator*() requires (!std::is_trivially_constructible_v<T>)
     {
         return m_Value;
     }
@@ -108,7 +108,7 @@ public:
         return *this;
     }
 
-    ConfigurableOption& operator=(const T& value) requires !std::is_trivially_constructible_v<T>
+    ConfigurableOption& operator=(const T& value) requires (!std::is_trivially_constructible_v<T>)
     {
         m_Value = value;
         return *this;

@@ -12,12 +12,83 @@ template<class T>
 class ConfigurableOption
 {
 public:
+    template<class T>
+    class CommandLineOptionWrapper
+    {
+    public:
+        CommandLineOptionWrapper(ConfigurableOption<T>& option)
+            : m_Option(option)
+        {
+        }
+
+        operator T() const requires std::is_trivially_constructible_v<T>
+        {
+            return m_Option;
+        }
+
+        T operator*() const requires std::is_trivially_constructible_v<T>
+        {
+            return m_Option;
+        }
+
+        operator const T& () const requires (!std::is_trivially_constructible_v<T>)
+        {
+            return m_Option;
+        }
+
+        operator T& () requires (!std::is_trivially_constructible_v<T>)
+        {
+            return m_Option;
+        }
+
+        const T& operator*() const requires (!std::is_trivially_constructible_v<T>)
+        {
+            return m_Option;
+        }
+
+        T& operator*() requires (!std::is_trivially_constructible_v<T>)
+        {
+            return m_Option;
+        }
+
+        T* operator->()
+        {
+            return m_Option;
+        }
+
+        const T* operator->() const
+        {
+            return m_Option;
+        }
+
+        CommandLineOptionWrapper<T>& operator=(T value) requires std::is_trivially_constructible_v<T>
+        {
+            m_Option.SetFromCommandLine(true);
+
+            m_Option = value;
+            return *this;
+        }
+
+        CommandLineOptionWrapper<T>& operator=(const T& value) requires (!std::is_trivially_constructible_v<T>)
+        {
+            m_Option.SetFromCommandLine(true);
+
+            m_Option = value;
+            return *this;
+        }
+
+    private:
+        ConfigurableOption<T>& m_Option;
+    };
+
+public:
     explicit ConfigurableOption(T value) requires std::is_trivially_constructible_v<T>
         : m_FromEnv(false)
         , m_FromConfig(false)
         , m_FromCommandLine(false)
         , m_DefaultValue(true)
         , m_Value(value)
+        , m_OptionWrapper(*this)
     {
     }
 
@@ -27,6 +98,7 @@ public:
         , m_FromCommandLine(false)
         , m_DefaultValue(true)
         , m_Value(value)
+        , m_OptionWrapper(*this)
     {
     }
 
@@ -35,6 +107,7 @@ public:
         , m_FromConfig(false)
         , m_FromCommandLine(false)
         , m_DefaultValue(false)
+        , m_OptionWrapper(*this)
     {
     }
 
@@ -132,7 +205,16 @@ public:
         return *this;
     }
 
-    bool operator==(const ConfigurableOption<T>& rhs) const = default;
+    bool operator==(const ConfigurableOption<T>& rhs) const
+    {
+        return false;
+    }
+
+    bool operator==(ConfigurableOption<T>& rhs)
+    {
+        return false;
+    }
+
     bool operator==(const T value) const requires std::is_trivially_constructible_v<T>
     {
         return m_Value == value;
@@ -163,6 +245,10 @@ public:
     bool GetFromConfig() const { return m_FromConfig; }
     bool GetFromCommandLine() const { return m_FromCommandLine; }
     bool GetDefaultValue() const { return m_DefaultValue; }
+
+    void SetFromCommandLine(bool value) { m_FromCommandLine = value; }
+
+    CommandLineOptionWrapper<T>& GetCommandLine() { return m_OptionWrapper; }
 
 private:
     bool ConfigureIfEnvVarNotEmpty(const std::string& envVariable)
@@ -203,11 +289,18 @@ private:
         return false;
     }
 
+    void SetValueCallback()
+    {
+
+    }
+
 private:
     bool m_FromEnv;
     bool m_FromConfig;
     bool m_FromCommandLine;
     bool m_DefaultValue;
+
+    CommandLineOptionWrapper<T> m_OptionWrapper;
 
     T m_Value;
     const std::pair<std::string, std::string> m_ConfigPath;

@@ -67,12 +67,12 @@ TEST_CASE("ConfigurableOption<std::string>")
         ConfigurableOption<std::string> option{ stringValue };
         CLI::App app{ "Unit Tests" };
 
-        app.add_option("-f,--flag", option, "");
+        app.add_option("-f,--flag", option.GetCommandLine(), "");
 
         constexpr const char* CLI_STR_VALUE = "CLI_TEST_STRING";
 
-        int argc = 1;
-        const char* argv[] = { CLI_STR_VALUE };
+        int argc = 3;
+        const char* argv[] = { ".exe", "-f", CLI_STR_VALUE};
 
         app.parse(argc, argv);
 
@@ -129,8 +129,8 @@ TEST_CASE("ConfigurableOption<int>")
 
         constexpr int CLI_INT_VALUE = 54321;
 
-        int argc = 1;
-        const char* argv[] = { "54321" };
+        int argc = 3;
+        const char* argv[] = { ".exe", "-f", "54321" };
 
         app.parse(argc, argv);
 

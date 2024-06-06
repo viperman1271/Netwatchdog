@@ -132,6 +132,17 @@ public:
         return *this;
     }
 
+    bool operator==(const ConfigurableOption<T>& rhs) const = default;
+    bool operator==(const T value) const requires std::is_trivially_constructible_v<T>
+    {
+        return m_Value == value;
+    }
+
+    bool operator==(const T& value) const requires (!std::is_trivially_constructible_v<T>)
+    {
+        return m_Value == value;
+    }
+
     T* operator->()
     {
         return &m_Value;
@@ -147,6 +158,11 @@ public:
         os << option.m_Value;
         return os;
     }
+
+    bool GetFromEnv() const { return m_FromEnv; }
+    bool GetFromConfig() const { return m_FromConfig; }
+    bool GetFromCommandLine() const { return m_FromCommandLine; }
+    bool GetDefaultValue() const { return m_DefaultValue; }
 
 private:
     bool ConfigureIfEnvVarNotEmpty(const std::string& envVariable)

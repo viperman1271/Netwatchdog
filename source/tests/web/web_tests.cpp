@@ -55,13 +55,13 @@ TEST_CASE("Private/Public key + certificate generated as expected")
     WebServer webServer(options);
     options = webServer.GetOptions();
 
-    CHECK_FALSE(std::filesystem::exists(options.web.certificatePath));
-    CHECK_FALSE(std::filesystem::exists(options.web.privateKeyPath));
-    CHECK_FALSE(std::filesystem::exists(options.web.publicKeyPath));
+    CHECK_FALSE(std::filesystem::exists(*options.web.certificatePath));
+    CHECK_FALSE(std::filesystem::exists(*options.web.privateKeyPath));
+    CHECK_FALSE(std::filesystem::exists(*options.web.publicKeyPath));
         
     CHECK(webServer.GenerateKeyAndCertificate());
 
-    CHECK(std::filesystem::exists(options.web.certificatePath));
-    CHECK(std::filesystem::exists(options.web.privateKeyPath));
-    CHECK(std::filesystem::exists(options.web.publicKeyPath));
+    CHECK(std::filesystem::exists(*options.web.certificatePath));
+    CHECK(std::filesystem::exists(*options.web.privateKeyPath));
+    CHECK(std::filesystem::exists(*options.web.publicKeyPath));
 }

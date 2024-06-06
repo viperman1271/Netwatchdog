@@ -14,7 +14,7 @@ mongocxx::instance Mongo::ms_Instance{};
 Mongo::Mongo(const Options& options)
 {
     std::stringstream ss;
-    if (!options.database.username.empty() && !options.database.password.empty())
+    if (!options.database.username->empty() && !options.database.password->empty())
     {
         ss << "mongodb://" << options.database.username << ":" << options.database.password << "@" << options.database.host << ":" << options.database.port;
     }

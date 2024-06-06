@@ -54,51 +54,6 @@ namespace Config
             config = toml::parse(configPath.string());
         }
 
-        const bool validServerIdentity = ValidateIdentity(config, "server", "identity");
-        const bool validClientIdentity = ValidateIdentity(config, "client", "identity");
-        if (!validServerIdentity || !validClientIdentity)
-        {
-            if (!validServerIdentity)
-            {
-                config["server"]["identity"] = uuids::to_string(uuids::uuid_random_generator(g_RNG)());
-            }
-
-            if (!validClientIdentity)
-            {
-                config["client"]["identity"] = uuids::to_string(uuids::uuid_random_generator(g_RNG)());
-            }
-
-            std::cout << "Configuration file [" << configPath.string() << "] contained invalid identity fields... updating." << std::endl;
-
-            std::ofstream ofs(configPath.string());
-            ofs << config;
-            ofs.close();
-        }
-
-        ConfigureDefaultValue(config, "server", "host", "*");
-        ConfigureDefaultValue(config, "server", "port", options.server.port);
-        ConfigureDefaultValue(config, "server", "secure", true);
-
-        ConfigureDefaultValue(config, "client", "host", "localhost");
-        ConfigureDefaultValue(config, "client", "port", options.client.port);
-        ConfigureDefaultValue(config, "client", "secure", true);
-
-        ConfigureDefaultValue(config, "database", "username", "root");
-        ConfigureDefaultValue(config, "database", "password", "password1234");
-        ConfigureDefaultValue(config, "database", "host", "localhost");
-        ConfigureDefaultValue(config, "database", "port", 27017);
-
-        ConfigureDefaultValue(config, "web", "host", "0.0.0.0");
-        ConfigureDefaultValue(config, "web", "port", 8080);
-        ConfigureDefaultValue(config, "web", "secure", true);
-        ConfigureDefaultValue(config, "web", "secure_port", 443);
-        ConfigureDefaultValue(config, "web", "serving_dir", Utils::GetWebFileServingPath().string());
-        ConfigureDefaultValue(config, "web", "private_key_path", "private_key.pem");
-        ConfigureDefaultValue(config, "web", "public_key_path", "public_key.pem");
-        ConfigureDefaultValue(config, "web", "certificate_path", "certificate.pem");
-
-        ConfigureDefaultValue(config, "admin", "direct", false);
-
         if (!configFileExists)
         {
             std::cout << "Configuration file [" << configPath.string() << "] not found... creating." << std::endl;
@@ -108,36 +63,40 @@ namespace Config
             ofs.close();
         }
 
-        ConfigureIfEnvVarNotEmpty(config, "database", "username", "MONGO_USERNAME");
-        ConfigureIfEnvVarNotEmpty(config, "database", "password", "MONGO_PASSWORD");
-        ConfigureIfEnvVarNotEmpty(config, "database", "host", "MONGO_HOST");
-        ConfigureIfEnvVarNotEmpty(config, "database", "port", "MONGO_PORT");
+        options.database.username.Init(config, { "database", "username" }, "MONGO_USERNAME");
+        options.database.password.Init(config, { "database", "password" }, "MONGO_PASSWORD");
+        options.database.host.Init(config, { "database", "host" }, "MONGO_HOST");
+        options.database.port.Init(config, { "database", "port" }, "MONGO_PORT");
 
-        options.client.host = toml::find<std::string>(config, "client", "host");
-        options.client.port = toml::find<int>(config, "client", "port");
-        options.client.identity = toml::find<std::string>(config, "client", "identity");
-        options.client.secure = toml::find<bool>(config, "client", "secure");
+        options.client.host.Init(config, { "client", "host" });
+        options.client.port.Init(config, { "client", "port" });
+        options.client.identity.Init(config, { "client", "identity" });
+        options.client.secure.Init(config, { "client", "secure" });
 
-        options.server.host = toml::find<std::string>(config, "server", "host");
-        options.server.port = toml::find<int>(config, "server", "port");
-        options.server.identity = toml::find<std::string>(config, "server", "identity");
-        options.server.secure = toml::find<bool>(config, "server", "secure");
+        options.server.host.Init(config, { "server", "host" });
+        options.server.port.Init(config, { "server", "port" });
+        options.server.identity.Init(config, { "server", "identity" });
+        options.server.secure.Init(config, { "server", "secure" });
 
-        options.web.fileServingDir = toml::find<std::string>(config, "web", "serving_dir");
-        options.web.host = toml::find<std::string>(config, "web", "host");
-        options.web.port = toml::find<int>(config, "web", "port");
-        options.web.secure = toml::find<bool>(config, "web", "secure");
-        options.web.securePort = toml::find<int>(config, "web", "secure_port");
-        options.web.privateKeyPath = toml::find<std::string>(config, "web", "private_key_path");
-        options.web.publicKeyPath = toml::find<std::string>(config, "web", "public_key_path");
-        options.web.certificatePath = toml::find<std::string>(config, "web", "certificate_path");
+        options.web.fileServingDir.Init(config, { "web", "serving_dir" });
+        options.web.host.Init(config, { "web", "host" });
+        options.web.port.Init(config, { "web", "port" });
+        options.web.secure.Init(config, { "web", "secure" });
+        options.web.securePort.Init(config, { "web", "secure_port" });
+        options.web.privateKeyPath.Init(config, { "web", "private_key_path" });
+        options.web.publicKeyPath.Init(config, { "web", "public_key_path" });
+        options.web.certificatePath.Init(config, { "web", "certificate_path" });
 
-        options.database.username = toml::find<std::string>(config, "database", "username");
-        options.database.password = toml::find<std::string>(config, "database", "password");
-        options.database.host = toml::find<std::string>(config, "database", "host");
-        options.database.port = toml::find<int>(config, "database", "port");
+        options.admin.direct.Init(config, { "admin", "direct" });
 
-        options.admin.direct = toml::find<bool>(config, "admin", "direct");
+        if (!configFileExists)
+        {
+            std::cout << "Configuration file [" << configPath.string() << "] not found... creating." << std::endl;
+
+            std::ofstream ofs(configPath.string());
+            ofs << config;
+            ofs.close();
+        }
     }
 
     bool ParseCommandLineOptions(int argc, char** argv, Options& options, const ParsingType parsingType)

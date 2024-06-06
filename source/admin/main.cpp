@@ -10,13 +10,13 @@ int main(int argc, char** argv)
         return -1;
     }
 
-    if (!options.admin.userToCreate.empty() || !options.admin.userPassword.empty())
+    if (!options.admin.userToCreate->empty() || !options.admin.userPassword->empty())
     {
-        if (options.admin.userToCreate.empty())
+        if (options.admin.userToCreate->empty())
         {
             std::cerr << "error: Username was not provided" << std::endl;
         }
-        else if (options.admin.userPassword.empty())
+        else if (options.admin.userPassword->empty())
         {
             std::cerr << "error: Password was not provided" << std::endl;
         }
@@ -24,7 +24,7 @@ int main(int argc, char** argv)
 
     if (options.admin.direct)
     {
-        if (!options.admin.userToCreate.empty() && !options.admin.userPassword.empty())
+        if (!options.admin.userToCreate->empty() && !options.admin.userPassword->empty())
         {
             User user;
             user.SetPassword(options.admin.userPassword);

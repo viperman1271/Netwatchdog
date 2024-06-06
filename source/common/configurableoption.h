@@ -40,7 +40,7 @@ public:
 
     ~ConfigurableOption() = default;
 
-    void Init(const toml::value& config, const std::pair<std::string, std::string>& configPath, const std::string& envVar = {}) requires std::is_trivially_constructible_v<T>
+    void Init(toml::value& config, const std::pair<std::string, std::string>& configPath, const std::string& envVar = {}) requires std::is_trivially_constructible_v<T>
     {
         if (ConfigureIfEnvVarNotEmpty(envVar))
         {
@@ -53,10 +53,16 @@ public:
 
             m_FromConfig = true;
             m_DefaultValue = false;
+
+            config[configPath.first][configPath.second] = m_Value;
+        }
+        else
+        {
+            config[configPath.first][configPath.second] = m_Value;
         }
     }
 
-    void Init(const toml::value& config, const std::pair<std::string, std::string>& configPath, const std::string& envVar = {}) requires (!std::is_trivially_constructible_v<T>)
+    void Init(toml::value& config, const std::pair<std::string, std::string>& configPath, const std::string& envVar = {}) requires (!std::is_trivially_constructible_v<T>)
     {
         if (ConfigureIfEnvVarNotEmpty(envVar))
         {
@@ -69,6 +75,12 @@ public:
 
             m_FromConfig = true;
             m_DefaultValue = false;
+
+            config[configPath.first][configPath.second] = m_Value;
+        }
+        else
+        {
+            config[configPath.first][configPath.second] = m_Value;
         }
     }
 
@@ -157,14 +169,14 @@ private:
         return false;
     }
 
-    bool ValueExists(const toml::value& config, const std::string& category, const std::string& variable)
+    bool ValueExists(toml::value& config, const std::string& category, const std::string& variable)
     {
         if (config.type() != toml::value_t::empty)
         {
             auto& tab = config.as_table();
             if (tab.count(category) != 0)
             {
-                auto& subtab = const_cast<toml::value&>(config)[category].as_table();
+                auto& subtab = config[category].as_table();
                 if (subtab.count(variable) != 0)
                 {
                     return true;

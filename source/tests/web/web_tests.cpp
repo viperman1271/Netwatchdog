@@ -30,7 +30,17 @@ TEST_CASE("Ensure that OPENSSL_Applink is available")
 #endif // _WIN32
 }
 
-TEST_CASE("Private/Public key + certificate generated as expected")
+class PrivatePublicKeyFixture
+{
+public:
+    PrivatePublicKeyFixture()
+    {
+        const std::filesystem::path& configPath = Utils::GetConfigPath();
+        std::filesystem::remove(configPath);
+    }
+};
+
+TEST_CASE_METHOD(PrivatePublicKeyFixture, "Private/Public key + certificate generated as expected")
 {
     Options options;
     Config::LoadOrCreateConfig(options);

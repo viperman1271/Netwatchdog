@@ -54,15 +54,6 @@ namespace Config
             config = toml::parse(configPath.string());
         }
 
-        if (!configFileExists)
-        {
-            std::cout << "Configuration file [" << configPath.string() << "] not found... creating." << std::endl;
-
-            std::ofstream ofs(configPath.string());
-            ofs << config;
-            ofs.close();
-        }
-
         options.database.username.Init(config, { "database", "username" }, "MONGO_USERNAME");
         options.database.password.Init(config, { "database", "password" }, "MONGO_PASSWORD");
         options.database.host.Init(config, { "database", "host" }, "MONGO_HOST");

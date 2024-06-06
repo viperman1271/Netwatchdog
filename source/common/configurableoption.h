@@ -64,6 +64,7 @@ public:
         CommandLineOptionWrapper<T>& operator=(T value) requires std::is_trivially_constructible_v<T>
         {
             m_Option.SetFromCommandLine(true);
+            m_Option.SetFromDefaultValue(false);
 
             m_Option = value;
             return *this;
@@ -72,6 +73,7 @@ public:
         CommandLineOptionWrapper<T>& operator=(const T& value) requires (!std::is_trivially_constructible_v<T>)
         {
             m_Option.SetFromCommandLine(true);
+            m_Option.SetFromDefaultValue(false);
 
             m_Option = value;
             return *this;
@@ -244,9 +246,10 @@ public:
     bool GetFromEnv() const { return m_FromEnv; }
     bool GetFromConfig() const { return m_FromConfig; }
     bool GetFromCommandLine() const { return m_FromCommandLine; }
-    bool GetDefaultValue() const { return m_DefaultValue; }
+    bool GetFromDefaultValue() const { return m_DefaultValue; }
 
     void SetFromCommandLine(bool value) { m_FromCommandLine = value; }
+    void SetFromDefaultValue(bool value) { m_DefaultValue = value; }
 
     CommandLineOptionWrapper<T>& GetCommandLine() { return m_OptionWrapper; }
 

@@ -1,5 +1,9 @@
 #include "config.h"
 
+#ifdef GetCommandLine
+#undef GetCommandLine
+#endif // GetCommandLine
+
 namespace Config
 {
     bool ValueExists(toml::value& config, const std::string& category, const std::string& variable)
@@ -96,51 +100,51 @@ namespace Config
 
         if (parsingType == ParsingType::Client)
         {
-            app.add_option("-p,--port", options.client.port, "The port to use [defaults to 32000]");
-            app.add_option("-i,--identity", options.client.identity, "Identity");
-            app.add_option("--host", options.client.host, "Host to connect to");
-            app.add_option("-c,--clientCount", options.client.count, "Number of clients to spawn.");
+            app.add_option("-p,--port", options.client.port.GetCommandLine(), "The port to use [defaults to 32000]");
+            app.add_option("-i,--identity", options.client.identity.GetCommandLine(), "Identity");
+            app.add_option("--host", options.client.host.GetCommandLine(), "Host to connect to");
+            app.add_option("-c,--clientCount", options.client.count.GetCommandLine(), "Number of clients to spawn.");
         }
         else if (parsingType == ParsingType::Server || parsingType == ParsingType::Admin || parsingType == ParsingType::Web)
         {
-            app.add_option("-p,--port", options.server.port, "The port to use [defaults to 32000]");
-            app.add_option("-i,--identity", options.server.identity, "Identity");
-            app.add_option("--host", options.server.host, "Listening address for the server [defaults to *]");
+            app.add_option("-p,--port", options.server.port.GetCommandLine(), "The port to use [defaults to 32000]");
+            app.add_option("-i,--identity", options.server.identity.GetCommandLine(), "Identity");
+            app.add_option("--host", options.server.host.GetCommandLine(), "Listening address for the server [defaults to *]");
 
-            app.add_option("--username", options.database.username, "Username for database access [defaults to root]");
-            app.add_option("--password", options.database.password, "Password for database access");
-            app.add_option("--db_host", options.database.host, "Database host address");
-            app.add_option("--db_port", options.database.port, "Database port [defaults to 27017]");
+            app.add_option("--username", options.database.username.GetCommandLine(), "Username for database access [defaults to root]");
+            app.add_option("--password", options.database.password.GetCommandLine(), "Password for database access");
+            app.add_option("--db_host", options.database.host.GetCommandLine(), "Database host address");
+            app.add_option("--db_port", options.database.port.GetCommandLine(), "Database port [defaults to 27017]");
         }
 
         if (parsingType == ParsingType::Admin)
         {
-            app.add_flag("--direct", options.admin.direct, "Whether or not the connection should be directly to the database.");
-            app.add_option("-c,--create_user", options.admin.userToCreate, "Username of the user to create");
-            app.add_option("--user_password", options.admin.userPassword, "Password of the user to create");
-            app.add_flag("--user_is_admin", options.admin.userIsAdmin, "Whether or not the user should be an admin.");
+            app.add_flag("--direct", options.admin.direct.GetCommandLine(), "Whether or not the connection should be directly to the database.");
+            app.add_option("-c,--create_user", options.admin.userToCreate.GetCommandLine(), "Username of the user to create");
+            app.add_option("--user_password", options.admin.userPassword.GetCommandLine(), "Password of the user to create");
+            app.add_flag("--user_is_admin", options.admin.userIsAdmin.GetCommandLine(), "Whether or not the user should be an admin.");
         }
 
         if (parsingType == ParsingType::Web)
         {
-            app.add_option("--secure_port", options.web.securePort, "The web secure port to use [defaults to 443]");
-            app.add_option("--private_key", options.web.privateKeyPath, "Path to find the private key for SSL cert");
-            app.add_option("--public_key", options.web.publicKeyPath, "Path to find the public key for SSL cert");
-            app.add_option("--certificate", options.web.certificatePath, "Path to find the certificate for SSL cert");
+            app.add_option("--secure_port", options.web.securePort.GetCommandLine(), "The web secure port to use [defaults to 443]");
+            app.add_option("--private_key", options.web.privateKeyPath.GetCommandLine(), "Path to find the private key for SSL cert");
+            app.add_option("--public_key", options.web.publicKeyPath.GetCommandLine(), "Path to find the public key for SSL cert");
+            app.add_option("--certificate", options.web.certificatePath.GetCommandLine(), "Path to find the certificate for SSL cert");
         }
 
         switch (parsingType)
         {
         case ParsingType::Client:
-            app.add_flag("-s,--secure", options.client.secure, "Whether secure communications (i.e https) should be used [defaults to true]");
+            app.add_flag("-s,--secure", options.client.secure.GetCommandLine(), "Whether secure communications (i.e https) should be used [defaults to true]");
             break;
 
         case ParsingType::Server:
-            app.add_flag("-s,--secure", options.server.secure, "Whether secure communications (i.e https) should be used [defaults to true]");
+            app.add_flag("-s,--secure", options.server.secure.GetCommandLine(), "Whether secure communications (i.e https) should be used [defaults to true]");
             break;
 
         case ParsingType::Web:
-            app.add_flag("-s,--secure", options.web.secure, "Whether secure communications (i.e https) should be used [defaults to true]");
+            app.add_flag("-s,--secure", options.web.secure.GetCommandLine(), "Whether secure communications (i.e https) should be used [defaults to true]");
             break;
         }
 

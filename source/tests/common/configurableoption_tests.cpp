@@ -125,7 +125,7 @@ TEST_CASE("ConfigurableOption<int>")
         ConfigurableOption<int> option{ INT_VALUE };
         CLI::App app{ "Unit Tests" };
 
-        app.add_option("-f,--flag", option, "");
+        app.add_option("-f,--flag", option.GetCommandLine(), "");
 
         constexpr int CLI_INT_VALUE = 54321;
 

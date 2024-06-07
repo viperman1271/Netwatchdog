@@ -156,7 +156,7 @@ jobs:
           - os: ubuntu-latest
             c_compiler: clang
             cpp_compiler: clang++
-    needs: build
+    needs: [ build, test ]
     if: startsWith(github.ref, 'refs/tags/')
 
     steps:

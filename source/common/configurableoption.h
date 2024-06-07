@@ -216,12 +216,12 @@ public:
 
     bool operator==(const ConfigurableOption<T>& rhs) const
     {
-        return false;
+        return m_Value == rhs.m_Value;
     }
 
     bool operator==(ConfigurableOption<T>& rhs)
     {
-        return false;
+        return m_Value == rhs.m_Value;
     }
 
     bool operator==(const T value) const requires std::is_trivially_constructible_v<T>

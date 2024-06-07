@@ -12,75 +12,82 @@ template<class T>
 class ConfigurableOption
 {
 public:
-    template<class T>
+    template<class T1>
     class CommandLineOptionWrapper
     {
     public:
-        CommandLineOptionWrapper(ConfigurableOption<T>& option)
+        CommandLineOptionWrapper(ConfigurableOption<T1>& option, std::function<void()> callback)
             : m_Option(option)
+            , m_SetValueCallback(callback)
         {
         }
 
-        operator T() const requires std::is_trivially_constructible_v<T>
+        operator T1() const requires std::is_trivially_constructible_v<T>
         {
             return m_Option;
         }
 
-        T operator*() const requires std::is_trivially_constructible_v<T>
+        T1 operator*() const requires std::is_trivially_constructible_v<T>
         {
             return m_Option;
         }
 
-        operator const T& () const requires (!std::is_trivially_constructible_v<T>)
+        operator const T1& () const requires (!std::is_trivially_constructible_v<T>)
         {
             return m_Option;
         }
 
-        operator T& () requires (!std::is_trivially_constructible_v<T>)
+        operator T1& () requires (!std::is_trivially_constructible_v<T>)
         {
             return m_Option;
         }
 
-        const T& operator*() const requires (!std::is_trivially_constructible_v<T>)
+        const T1& operator*() const requires (!std::is_trivially_constructible_v<T>)
         {
             return m_Option;
         }
 
-        T& operator*() requires (!std::is_trivially_constructible_v<T>)
+        T1& operator*() requires (!std::is_trivially_constructible_v<T>)
         {
             return m_Option;
         }
 
-        T* operator->()
+        T1* operator->()
         {
             return m_Option;
         }
 
-        const T* operator->() const
+        const T1* operator->() const
         {
             return m_Option;
         }
 
-        CommandLineOptionWrapper<T>& operator=(T value) requires std::is_trivially_constructible_v<T>
+        CommandLineOptionWrapper<T1>& operator=(T1 value) requires std::is_trivially_constructible_v<T>
         {
-            m_Option.SetFromCommandLine(true);
-            m_Option.SetFromDefaultValue(false);
+            if (m_SetValueCallback)
+            {
+                m_SetValueCallback();
+            }
 
             m_Option = value;
             return *this;
         }
 
-        CommandLineOptionWrapper<T>& operator=(const T& value) requires (!std::is_trivially_constructible_v<T>)
+        CommandLineOptionWrapper<T1>& operator=(const T1& value) requires (!std::is_trivially_constructible_v<T>)
         {
-            m_Option.SetFromCommandLine(true);
-            m_Option.SetFromDefaultValue(false);
+            if (m_SetValueCallback)
+            {
+                m_SetValueCallback();
+            }
+            
 
             m_Option = value;
             return *this;
         }
 
     private:
-        ConfigurableOption<T>& m_Option;
+        ConfigurableOption<T1>& m_Option;
+        std::function<void()> m_SetValueCallback;
     };
 
 public:
@@ -88,9 +95,9 @@ public:
         : m_FromEnv(false)
         , m_FromConfig(false)
         , m_FromCommandLine(false)
-        , m_DefaultValue(true)
+        , m_FromDefaultValue(true)
         , m_Value(value)
-        , m_OptionWrapper(*this)
+        , m_OptionWrapper(*this, [this]() { SetValueCallback(); })
     {
     }
 
@@ -98,9 +105,9 @@ public:
         : m_FromEnv(false)
         , m_FromConfig(false)
         , m_FromCommandLine(false)
-        , m_DefaultValue(true)
+        , m_FromDefaultValue(true)
         , m_Value(value)
-        , m_OptionWrapper(*this)
+        , m_OptionWrapper(*this, [this]() { SetValueCallback(); })
     {
     }
 
@@ -108,8 +115,8 @@ public:
         : m_FromEnv(false)
         , m_FromConfig(false)
         , m_FromCommandLine(false)
-        , m_DefaultValue(false)
-        , m_OptionWrapper(*this)
+        , m_FromDefaultValue(false)
+        , m_OptionWrapper(*this, [this]() { SetValueCallback(); })
     {
     }
 
@@ -120,14 +127,14 @@ public:
         if (ConfigureIfEnvVarNotEmpty(envVar))
         {
             m_FromEnv = true;
-            m_DefaultValue = false;
+            m_FromDefaultValue = false;
         }
         else if (ValueExists(config, configPath.first, configPath.second))
         {
             m_Value = toml::find<T>(config, configPath.first, configPath.second);
 
             m_FromConfig = true;
-            m_DefaultValue = false;
+            m_FromDefaultValue = false;
 
             config[configPath.first][configPath.second] = m_Value;
         }
@@ -142,14 +149,14 @@ public:
         if (ConfigureIfEnvVarNotEmpty(envVar))
         {
             m_FromEnv = true;
-            m_DefaultValue = false;
+            m_FromDefaultValue = false;
         }
         else if (ValueExists(config, configPath.first, configPath.second))
         {
             m_Value = toml::find<T>(config, configPath.first, configPath.second);
 
             m_FromConfig = true;
-            m_DefaultValue = false;
+            m_FromDefaultValue = false;
 
             config[configPath.first][configPath.second] = m_Value;
         }
@@ -246,10 +253,7 @@ public:
     bool GetFromEnv() const { return m_FromEnv; }
     bool GetFromConfig() const { return m_FromConfig; }
     bool GetFromCommandLine() const { return m_FromCommandLine; }
-    bool GetFromDefaultValue() const { return m_DefaultValue; }
-
-    void SetFromCommandLine(bool value) { m_FromCommandLine = value; }
-    void SetFromDefaultValue(bool value) { m_DefaultValue = value; }
+    bool GetFromDefaultValue() const { return m_FromDefaultValue; }
 
     CommandLineOptionWrapper<T>& GetCommandLine() { return m_OptionWrapper; }
 
@@ -294,14 +298,15 @@ private:
 
     void SetValueCallback()
     {
-
+        m_FromCommandLine = true;
+        m_FromDefaultValue = false;
     }
 
 private:
     bool m_FromEnv;
     bool m_FromConfig;
     bool m_FromCommandLine;
-    bool m_DefaultValue;
+    bool m_FromDefaultValue;
 
     CommandLineOptionWrapper<T> m_OptionWrapper;
 

@@ -385,7 +385,7 @@ WebServer::TokenResult WebServer::ExtractUsernameFromToken(const Options& m_Opti
     return TokenResult::Invalid;
 }
 
-WebServer::TokenResult WebServer::ValidateToken(Mongo& mongo, const Options& m_Options, const httplib::Request& req)
+WebServer::TokenResult WebServer::ValidateToken(Mongo& mongo, const Options& m_Options, const httplib::Request& req, User& out_user)
 {
     std::string token;
     if (!DecodeToken(m_Options, req, token))
@@ -402,8 +402,7 @@ WebServer::TokenResult WebServer::ValidateToken(Mongo& mongo, const Options& m_O
         }
         jwt::claim usernameClaim = decoded.get_payload_claim("username");
 
-        User user;
-        if (!mongo.FetchUser(usernameClaim.as_string(), user))
+        if (!mongo.FetchUser(usernameClaim.as_string(), out_user))
         {
             return TokenResult::Invalid;
         }
@@ -427,13 +426,12 @@ WebServer::TokenResult WebServer::ValidateToken(Mongo& mongo, const Options& m_O
 
 bool WebServer::ValidateToken(Mongo& mongo, const Options& m_Options, const httplib::Request& req, httplib::Response& res)
 {
-    switch (ValidateToken(mongo, m_Options, req))
+    User user;
+    switch (ValidateToken(mongo, m_Options, req, user))
     {
     case TokenResult::Correct:
     {
-        std::string username;
-        ExtractUsernameFromToken(m_Options, req, username);
-        nlohmann::json response = { { "response", "Access granted to protected resource" }, { "username", username } };
+        nlohmann::json response = { { "response", "Access granted to protected resource" }, { "username", user.m_Username }, { "email", user.m_EmailAddress } };
         res.status = 200;
         res.set_content(response.dump(), "application/json");
         return true;

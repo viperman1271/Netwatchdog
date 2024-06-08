@@ -30,6 +30,7 @@ public:
     static bool DecodeToken(const Options& options, const httplib::Request& req, std::string& token);
     static bool ExtractToken(const Options& options, const httplib::Request& req, jwt::decoded_jwt<jwt::traits::kazuho_picojson>& jwtToken);
     static TokenResult ValidateToken(Mongo& mongo, const Options& options, const httplib::Request& req);
+    static TokenResult ExtractUsernameFromToken(const Options& m_Options, const httplib::Request& req, std::string& out_username);
     static bool ValidateToken(Mongo& mongo, const Options& options, const httplib::Request& req, httplib::Response& res);
     static std::string ConvertHighResRepToString(std::chrono::system_clock::duration::rep rep);
 

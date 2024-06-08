@@ -1,163 +1,255 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Netwatchdog - Dashboard</title>
-    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.10.2/font/bootstrap-icons.min.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
-    <link href="/styles/styles.css" rel="stylesheet"/>
 
+<!doctype html>
+<html lang="en" data-bs-theme="auto">
+<head>
+    <script src="/scripts/color-modes.js"></script>
+    <script src="https://kit.fontawesome.com/6c50ddbfd9.js" crossorigin="anonymous"></script>
+
+    <meta charset="utf-8">
+    <title>Netwatchdog - Dashboard</title>
+
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@docsearch/css@3">
+    <link href="/bootstrap/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+
+    <link href="/bootstrap/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+    <script src="/bootstrap/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+
+    <!-- Favicons -->
     <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
     <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32.png">
     <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16.png">
     <link rel="icon" type="image/x-icon" href="/images/favicon.ico">
     <link rel="manifest" href="/images/site.webmanifest">
+
+    <style>
+        .bd-placeholder-img {
+            font-size: 1.125rem;
+            text-anchor: middle;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            user-select: none;
+        }
+
+        @media (min-width: 768px) {
+            .bd-placeholder-img-lg {
+            font-size: 3.5rem;
+            }
+        }
+
+        .b-example-divider {
+            width: 100%;
+            height: 3rem;
+            background-color: rgba(0, 0, 0, .1);
+            border: solid rgba(0, 0, 0, .15);
+            border-width: 1px 0;
+            box-shadow: inset 0 .5em 1.5em rgba(0, 0, 0, .1), inset 0 .125em .5em rgba(0, 0, 0, .15);
+        }
+
+        .b-example-vr {
+            flex-shrink: 0;
+            width: 1.5rem;
+            height: 100vh;
+        }
+
+        .bi {
+            vertical-align: -.125em;
+            fill: currentColor;
+        }
+
+        .nav-scroller {
+            position: relative;
+            z-index: 2;
+            height: 2.75rem;
+            overflow-y: hidden;
+        }
+
+        .nav-scroller .nav {
+            display: flex;
+            flex-wrap: nowrap;
+            padding-bottom: 1rem;
+            margin-top: -1px;
+            overflow-x: auto;
+            text-align: center;
+            white-space: nowrap;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .btn-bd-primary {
+            --bd-violet-bg: #712cf9;
+            --bd-violet-rgb: 112.520718, 44.062154, 249.437846;
+
+            --bs-btn-font-weight: 600;
+            --bs-btn-color: var(--bs-white);
+            --bs-btn-bg: var(--bd-violet-bg);
+            --bs-btn-border-color: var(--bd-violet-bg);
+            --bs-btn-hover-color: var(--bs-white);
+            --bs-btn-hover-bg: #6528e0;
+            --bs-btn-hover-border-color: #6528e0;
+            --bs-btn-focus-shadow-rgb: var(--bd-violet-rgb);
+            --bs-btn-active-color: var(--bs-btn-hover-color);
+            --bs-btn-active-bg: #5a23c8;
+            --bs-btn-active-border-color: #5a23c8;
+        }
+
+        .bd-mode-toggle {
+            z-index: 1500;
+        }
+
+        .bd-mode-toggle .dropdown-menu .active .bi {
+            display: block !important;
+        }
+
+        .hidden-link {
+            visibility: hidden;
+        }
+
+        #main-content {
+            width: 100%;      /* Adjust as needed */
+            height: 100vh;    /* Adjust as needed */
+            overflow: auto;   /* Adds scroll bars if content overflows */
+            border: 1px solid #000; /* Optional: To visually see the container boundaries */
+        }
+    </style>
+    
+    <!-- Custom styles for this template -->
+    <link href="/styles/sidebars.css" rel="stylesheet">
 </head>
-<body class="bg-common bg-gray-100">
+<body>
     <script src="/scripts/auth.js" type="module"></script>
     <script src="/scripts/check.js" type="module"></script>
-
-    <div class="min-h-screen flex">
-        <!-- Sidebar -->
-        <div id="sidebar" class="w-64 bg-gray-800 text-white flex flex-col transition-width">
-            <button id="toggleSidebar">
-                <div class="p-4 text-2xl font-bold flex items-center">
-                    <i class="fas fa-bars mr-2"></i>
-                    <span class="sidebar-text">Netwatchdog</span>
-                </div>
-            </button>
-            <nav class="flex-grow">
-                <ul>
-                    <a href="dashboard.html">
-                        <li class="p-4 hover:bg-gray-700 flex items-center">
-                            <i class="fas fa-home mr-2"></i>
-                            <span class="sidebar-text">Home</span>
-                        </li>
-                    </a>
-                    <a href="?clients">
-                        <li class="p-4 hover:bg-gray-700 flex items-center">
-                            <i class="fas fa-users mr-2"></i>
-                            <span class="sidebar-text">Clients</span>
-                        </li>
-                    </a>
-                    <a href="?api-keys">
-                        <li class="p-4 hover:bg-gray-700 flex items-center">
-                            <i class="fas fa-key mr-2"></i>
-                            <span class="sidebar-text">API Keys</span>
-                        </li>
-                    </a>
-                    <a href="?logs">
-                        <li class="p-4 hover:bg-gray-700 flex items-center">
-                            <i class="bi bi-bar-chart mr-2"></i>
-                            <span class="sidebar-text">Logs</span>
-                        </li>
-                    </a>
-                    <a href="?profile">
-                        <li class="p-4 hover:bg-gray-700 flex items-center">
-                            <i class="fas fa-user mr-2"></i>
-                            <span class="sidebar-text">Profile</span>
-                        </li>
-                    </a>
-                    <a href="?signout">
-                        <li class="p-4 hover:bg-gray-700 flex items-center">
-                            <i class="fas fa-arrow-right-from-bracket"></i>
-                            <span class="sidebar-text">Sign out</span>
-                        </li>
-                    </a>
-                </ul>
-            </nav>
-            <button id="toggleSidebarBottom" class="bg-gray-700 text-white p-2 m-4 flex items-center justify-center">
-                <i class="fas fa-arrow-left"></i> <span class="sidebar-text">Collapse</span>
-            </button>
-        </div>
-
-        <!-- Main Content -->
-        <div class="flex-grow p-6">
-            <h2 class="text-lg font-semibold mb-4">${{TABLE_HEADER}}</h2>
-                <div class="h-96 overflow-y-auto shadow-4xl">
-                    <div class="h-96">
-                        <table id="dataTable" class="min-w-full bg-white border border-gray-200">
-${{TABLE_CONTENTS}}
-                        </table>
-                        <form id="clear-form" class="" method="post" action="/api/client-info/clear">
-                            <button id="clearItems" class="bg-gray-700 text-white p-2 m-4 flex items-center justify-center">
-                                Clear
-                            </button>
-                        </form>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
     <script>
-        document.getElementById('toggleSidebarBottom').addEventListener('click', function() {
-            const sidebar = document.getElementById('sidebar');
-            sidebar.classList.toggle('w-64');
-            sidebar.classList.toggle('w-16');
+        document.addEventListener('DOMContentLoaded', function() {
+            const token = localStorage.getItem('authToken');
+            if (token) {
+                fetch('/api/admin', {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': 'Bearer ' + token
+                    }
+                })
+                .then(response => {
+                    if (response.ok) {
+                        document.getElementById('adminButton').style.visibility = 'visible';
+                    } else {
+                        document.getElementById('adminButton').style.display = 'none';
+                    }
+                })
+                .catch(error => {
+                    document.getElementById('adminButton').style.display = 'none';
+                });
+            }
 
-            // Toggle visibility of text elements
-            const sidebarTextElements = document.querySelectorAll('.sidebar-text');
-            sidebarTextElements.forEach(element => {
-                element.classList.toggle('hidden');
-            });
-
-            // Toggle icon direction
-            const toggleIcon = document.querySelector('#toggleSidebarBottom i');
-            if (sidebar.classList.contains('w-64')) {
-                toggleIcon.classList.remove('fa-arrow-right');
-                toggleIcon.classList.add('fa-arrow-left');
-            } else {
-                toggleIcon.classList.remove('fa-arrow-left');
-                toggleIcon.classList.add('fa-arrow-right');
+            if(window.location.search === "?signout") {
+                localStorage.setItem('authToken', '');
+                window.location.href = '/';
             }
         });
-
-        document.getElementById('toggleSidebar').addEventListener('click', function() {
-            const sidebar = document.getElementById('sidebar');
-            sidebar.classList.toggle('w-64');
-            sidebar.classList.toggle('w-16');
-
-            // Toggle visibility of text elements
-            const sidebarTextElements = document.querySelectorAll('.sidebar-text');
-            sidebarTextElements.forEach(element => {
-                element.classList.toggle('hidden');
-            });
-        });
-
-        document.getElementById('clear-form').addEventListener('submit', function(event) {
-          event.preventDefault();
-
-          const queryString = window.location.search;
-          const urlParams = new URLSearchParams(queryString);
-          const clientId = urlParams.get('clientId')
-
-          var xhr = new XMLHttpRequest();
-          xhr.open('POST', '/api/client-info/clear', true);
-          xhr.setRequestHeader('Content-Type', 'application/json;charset=UTF-8');
-
-          var data = JSON.stringify({
-              clientId: clientId
-          });
-
-          xhr.send(data);
-          location.reload();
-      });
-
-      document.addEventListener('DOMContentLoaded', function() {
-        if(window.location.search !== "?logs") {
-          document.getElementById('clearItems').style.visibility = 'hidden';
-        } 
-        
-        if(window.location.search === "?signout") {
-            localStorage.setItem('authToken', '');
-            window.location.href = '/';
-        }
-      });
-      
     </script>
 
+    <main class="d-flex flex-nowrap">
+        <div class="d-flex flex-column flex-shrink-0 p-3 text-bg-dark" style="width: 280px;">
+            <a href="dashboard.html" class="d-flex align-items-center mb-3 mb-md-0 me-md-auto text-white text-decoration-none">
+            <i class="fa-solid fa-bars"></i>
+            <span class="fs-4">Netwatchdog</span>
+            </a>
+            <hr>
+            <ul class="nav nav-pills flex-column mb-auto">
+            <li class="nav-item">
+                <a href="dashboard.html" class="nav-link ${{DASHBOARD_CLASS}}" aria-current="page">
+                    <i class="fa-solid fa-house mr-2"></i>
+                    Home
+                </a>
+            </li>
+            <li>
+                <a href="?clients" class="nav-link ${{CLIENTS_CLASS}}">
+                    <i class="fa-solid fa-network-wired"></i>
+                    Clients
+                </a>
+            </li>
+            <li>
+                <a href="?api-keys" class="nav-link ${{APIKEYS_CLASS}}">
+                    <i class="fa-solid fa-key"></i>
+                    API Keys
+                </a>
+            </li>
+            <li>
+                <a href="?logs" class="nav-link ${{LOGS_CLASS}}">
+                    <i class="fa-solid fa-list"></i>
+                    Logs
+                </a>
+            </li>
+            <li>
+                <a href="?admin" class="nav-link ${{ADMIN_CLASS}} hidden-link" id="adminButton">
+                    <i class="fa-solid fa-sliders"></i>
+                    Admin
+                </a>
+            </li>
+            </ul>
+            <hr>
+            <div class="dropdown">
+                <a href="#" class="d-flex align-items-center text-white text-decoration-none dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                    <img src="https://github.com/viperman1271.png" alt="" width="32" height="32" class="rounded-circle me-2">
+                    <strong id="username">Username</strong>
+                </a>
+                <ul class="dropdown-menu dropdown-menu-dark text-small shadow">
+                    <li><a class="dropdown-item" href="?profile">Profile</a></li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li><a class="dropdown-item" href="?signout">Sign out</a></li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="b-example-divider b-example-vr"></div>
+        <div id="main-content">
+            <!-- This Content Should Be Replaced -->
+        </div>
+    </main>
+
+    <script>
+        async function fetchAndInsert() {
+            const token = localStorage.getItem('authToken');
+            if (token) {
+                var fullPath;
+                var client;
+                const basePath = "/api/dashboard";
+
+                const fullLoc = window.location.search;
+                const index = fullLoc.indexOf("&");
+                if(index != -1) {
+                    const url = window.location.href;
+                    const urlObject = new URL(url);
+                    const params = new URLSearchParams(urlObject.search);
+                    client = params.get('clientId');
+
+                    var loc = fullLoc.substr(1, index - 1);
+                    fullPath = basePath.concat("/", loc);
+                }
+                else {
+                    var loc = window.location.search.substr(1);
+                    fullPath = basePath.concat("/", loc);
+                }
+
+                const response = await fetch(fullPath, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': 'Bearer ' + token,
+                        'Client' : client
+                    }
+                });
+
+                if (response.ok) {
+                    const content = await response.text();
+                    document.getElementById("main-content").innerHTML = content;
+                }
+            } else {
+                console.error("Invalid token");
+            }
+        }
+
+        // Example usage: Fetch and insert content from 'page-to-fetch.html' into the 'content' div
+        fetchAndInsert();
+    </script>
+
+    <script src="/scripts/sidebars.js"></script>
 </body>
 </html>

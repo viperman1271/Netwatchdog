@@ -1,0 +1,20 @@
+<h2>Logs</h2>
+
+<table id="dataTable" class="table table-bordered table-hover">
+    <thead class="thead-dark">
+        <tr>
+            <th scope="col">Log Type</th>
+            <th scope="col">Client ID</th>
+            <th scope="col">Time</th>
+        </tr>
+    </thead>
+    <tbody>
+        ${{TABLE_BODY_CONTENTS}}
+    </tbody>
+</table>
+
+<form id="clear-form" class="" method="post" action="/api/client-info/clear">
+    <button id="clearItems" class="bg-gray-700 text-white p-2 m-4 flex items-center justify-center">
+        Clear
+    </button>
+</form>

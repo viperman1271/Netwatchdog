@@ -27,7 +27,7 @@ struct Options
         ConfigurableOption<std::string> username{ "root" };
         ConfigurableOption<std::string> password;
         ConfigurableOption<std::string> host{ "localhost" };
-        ConfigurableOption<int> port{ true };
+        ConfigurableOption<int> port{ 27017 };
     } database;
 
     struct

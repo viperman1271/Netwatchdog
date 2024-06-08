@@ -2,6 +2,18 @@
 
 #include <httplib.h>
 
+#include <string>
+
+constexpr uint32_t StringHash(std::string_view str, uint32_t prime = 31) 
+{
+    uint32_t hash = 0;
+    for (char c : str) 
+    {
+        hash = hash * prime + c;
+    }
+    return hash;
+}
+
 WebServer::WebServer(const Options& options)
     : m_Options(options)
 {
@@ -62,16 +74,20 @@ bool WebServer::Run()
     };
 
     const std::string imagesPath = func("images");
-    std::cout << "Serving /images from " << imagesPath;
+    std::cout << "Serving /images from " << imagesPath << std::endl;
     svr->set_mount_point("/images", imagesPath);
 
     const std::string scriptsPath = func("scripts");
-    std::cout << "Serving /scripts from " << scriptsPath;
+    std::cout << "Serving /scripts from " << scriptsPath << std::endl;
     svr->set_mount_point("/scripts", func("scripts"));
 
     const std::string stylesPath = func("styles");
-    std::cout << "Serving /styles from " << stylesPath;
+    std::cout << "Serving /styles from " << stylesPath << std::endl;
     svr->set_mount_point("/styles", func("styles"));
+
+    const std::string bootstrapPath = func("bootstrap");
+    std::cout << "Serving /bootstrap from " << bootstrapPath << std::endl;
+    svr->set_mount_point("/bootstrap", func("bootstrap"));
 
     svr->Get("/", [&](const httplib::Request& req, httplib::Response& res)
     {
@@ -91,13 +107,6 @@ bool WebServer::Run()
         return fileServingDir;
     };
 
-    WebTemplate tbody(templateFunc("tbody.template"));
-    WebTemplate thead(templateFunc("thead.template"));
-    WebTemplate thead_tr(templateFunc("thead-tr.template"));
-    WebTemplate thead_tr_th(templateFunc("thead-tr-th.template"));
-    WebTemplate tbody_tr(templateFunc("tbody-tr.template"));
-    WebTemplate tbody_tr_td(templateFunc("tbody-tr-td.template"));
-
     svr->Get("/dashboard.html", [&](const httplib::Request& req, httplib::Response& res)
     {
         std::filesystem::path filePath(*m_Options.web.fileServingDir);
@@ -106,63 +115,50 @@ bool WebServer::Run()
         std::string content;
         ReadFile(filePath, res, content);
 
-//         if (!validateToken(m_Options, req, res))
-//         {
-//             replaceStrInString(content, "${{TABLE_CONTENTS}}", "");
-//             res.set_content(content, "text/html");
-//             return;
-//         }
-
-        if (req.params.contains("logs"))
+        const std::string& target = req.target;
+        const size_t indexOfQuery = target.find('?');
+        std::string resolvedTarget;
+        if (indexOfQuery != std::string::npos)
         {
-            Utils::ReplaceStrInString(content, "${{TABLE_HEADER}}", "Connection Logs");
-
-            std::string clientId{};
-            if (req.params.contains("clientId"))
+            const size_t indexOfSecondQuery = target.find('&');
+            if (indexOfSecondQuery != std::string::npos)
             {
-                clientId = req.params.equal_range("clientId").first->second;
+                resolvedTarget = target.substr(indexOfQuery + 1, indexOfSecondQuery - indexOfQuery - 1);
             }
-
-            std::vector<ConnectionInfo> connInfos;
-            Mongo mongo(m_Options);
-            mongo.FetchClientInfo(clientId, connInfos);
-
-            const std::string baseIndent = "                                    ";
-            std::stringstream ss;
+            else
             {
-                WebTemplate::AutoScope tbodyScope(ss, tbody);
-                {
-                    WebTemplate::AutoScope theadScope(ss, thead);
-                    {
-                        WebTemplate::AutoScope thead_tr_Scope(ss, thead_tr);
-                        {
-                            thead_tr_th.Write(ss, { {"${{col_name}}", "conn"}, {"${{col_text}}", "Log Type"} });
-                            thead_tr_th.Write(ss, { {"${{col_name}}", "client"}, {"${{col_text}}", "Client ID"} });
-                            thead_tr_th.Write(ss, { {"${{col_name}}", "time"}, {"${{col_text}}", "Time"} });
-                        }
-                    }
-                }
-                for (const ConnectionInfo& connInfo : connInfos)
-                {
-                    WebTemplate::AutoScope tbody_tr_scope(ss, tbody_tr);
-
-                    char fullLink[256];
-                    sprintf(fullLink, "<a href=\"dashboard.html?logs&clientId=%s\">%s</a>", connInfo.m_UniqueId.c_str(), connInfo.m_UniqueId.c_str());
-
-                    const std::string time = ConvertHighResRepToString(connInfo.m_Time);
-
-                    tbody_tr_td.Write(ss, { {"${{row_text}}", (connInfo.m_Connection == ConnectionInfo::Type::Connection ? "Connection" : "Disconnection")} });
-                    tbody_tr_td.Write(ss, { {"${{row_text}}", fullLink} });
-                    tbody_tr_td.Write(ss, { {"${{row_text}}", time} });
-                }
+                resolvedTarget = target.substr(indexOfQuery + 1);
             }
-            Utils::ReplaceStrInString(content, "${{TABLE_CONTENTS}}", ss.str());
         }
         else
         {
-            Utils::ReplaceStrInString(content, "${{TABLE_HEADER}}", "");
-            Utils::ReplaceStrInString(content, "${{TABLE_CONTENTS}}", "");
+            Utils::ReplaceStrInString(content, "${{DASHBOARD_CLASS}}", "active");
         }
+
+        switch (StringHash(resolvedTarget))
+        {
+        case StringHash("clients"):
+            Utils::ReplaceStrInString(content, "${{CLIENTS_CLASS}}", "active");
+            break;
+
+        case StringHash("api-keys"):
+            Utils::ReplaceStrInString(content, "${{APIKEYS_CLASS}}", "active");
+            break;
+
+        case StringHash("logs"):
+            Utils::ReplaceStrInString(content, "${{LOGS_CLASS}}", "active");
+            break;
+
+        case StringHash("admin"):
+            Utils::ReplaceStrInString(content, "${{ADMIN_CLASS}}", "active");
+            break;
+        }
+
+        Utils::ReplaceStrInString(content, "${{DASHBOARD_CLASS}}", "text-white");
+        Utils::ReplaceStrInString(content, "${{CLIENTS_CLASS}}", "text-white");
+        Utils::ReplaceStrInString(content, "${{APIKEYS_CLASS}}", "text-white");
+        Utils::ReplaceStrInString(content, "${{LOGS_CLASS}}", "text-white");
+        Utils::ReplaceStrInString(content, "${{ADMIN_CLASS}}", "text-white");
 
         res.set_content(content, "text/html");
     });
@@ -171,24 +167,6 @@ bool WebServer::Run()
     {
         Mongo mongo(m_Options);
         ValidateToken(mongo, m_Options, req, res);
-    });
-
-    svr->Get(R"(/api/(.*))", [&](const httplib::Request& req, httplib::Response& res)
-    {
-        res.status = 200;
-        res.set_content("Invalid token", "text/plain");
-    });
-
-    svr->Get(R"(/(.*))", [&](const httplib::Request& req, httplib::Response& res)
-    {
-        const std::string file = req.matches[1];
-
-        std::filesystem::path filePath(*m_Options.web.fileServingDir);
-        filePath /= file;
-
-        std::string content;
-        ReadFile(filePath, res, content);
-        res.set_content(content, "text/html");
     });
 
     svr->Post("/api/login", [&](const httplib::Request& req, httplib::Response& res) 
@@ -216,6 +194,75 @@ bool WebServer::Run()
         }
     });
 
+    svr->Get("/api/admin", [&](const httplib::Request& req, httplib::Response& res)
+    {
+        std::string username;
+        if (ExtractUsernameFromToken(m_Options, req, username) == TokenResult::Correct)
+        {
+            Mongo mongo(m_Options);
+            User user;
+            if (mongo.FetchUser(username, user))
+            {
+                if (user.m_IsAdmin)
+                {
+                    res.status = 200;
+                    res.set_content("Admin access granted", "text/plain");
+                }
+                else
+                {
+                    res.status = 401;
+                    res.set_content("Admin access unauthorized", "text/plain");
+                }
+            }
+        }
+    });
+
+    svr->Get("/api/dashboard/logs", [&](const httplib::Request& req, httplib::Response& res)
+    {
+        Mongo mongo(m_Options);
+        if (!ValidateToken(mongo, m_Options, req, res))
+        {
+            return;
+        }
+
+        const std::string clientId = req.get_header_value("Client") != "undefined" ? req.get_header_value("Client") : "";
+
+        std::filesystem::path filePath(*m_Options.web.fileServingDir);
+        filePath /= "dashboard";
+        filePath /= "logs.html";
+
+        std::string content;
+        ReadFile(filePath, res, content);
+
+        WebTemplate tbody_tr(templateFunc("tbody-tr.template"));
+        WebTemplate tbody_tr_td(templateFunc("tbody-tr-td.template"));
+
+        std::vector<ConnectionInfo> connInfos;
+        mongo.FetchClientInfo(clientId, connInfos);
+
+        const std::string baseIndent = "                                    ";
+        std::stringstream ss;
+        {
+            for (const ConnectionInfo& connInfo : connInfos)
+            {
+                WebTemplate::AutoScope tbody_tr_scope(ss, tbody_tr);
+
+                char fullLink[256];
+                sprintf(fullLink, "<a href=\"dashboard.html?logs&clientId=%s\">%s</a>", connInfo.m_UniqueId.c_str(), connInfo.m_UniqueId.c_str());
+
+                const std::string time = ConvertHighResRepToString(connInfo.m_Time);
+
+                tbody_tr_td.Write(ss, { {"${{row_text}}", (connInfo.m_Connection == ConnectionInfo::Type::Connection ? "Connection" : "Disconnection")} });
+                tbody_tr_td.Write(ss, { {"${{row_text}}", fullLink} });
+                tbody_tr_td.Write(ss, { {"${{row_text}}", time} });
+            }
+        }
+        Utils::ReplaceStrInString(content, "${{TABLE_BODY_CONTENTS}}", ss.str());
+
+        res.status = 200;
+        res.set_content(content, "text/html");
+    });
+
     svr->Post("/api/client-info/clear", [&](const httplib::Request& req, httplib::Response& res) 
     {
         auto body = nlohmann::json::parse(req.body);
@@ -223,6 +270,24 @@ bool WebServer::Run()
 
         Mongo mongo(m_Options);
         mongo.DeleteInfo(Mongo::Database::Stats, Mongo::Collection::Connection, clientId);
+    });
+
+    svr->Get(R"(/api/(.*))", [&](const httplib::Request& req, httplib::Response& res)
+    {
+        res.status = 401;
+        res.set_content("Invalid token", "text/plain");
+    });
+
+    svr->Get(R"(/(.*))", [&](const httplib::Request& req, httplib::Response& res)
+    {
+        const std::string file = req.matches[1];
+
+        std::filesystem::path filePath(*m_Options.web.fileServingDir);
+        filePath /= file;
+
+        std::string content;
+        ReadFile(filePath, res, content);
+        res.set_content(content, "text/html");
     });
 
     svr->listen(m_Options.web.host, m_Options.web.secure ? m_Options.web.securePort : m_Options.web.port);
@@ -295,6 +360,31 @@ bool WebServer::ExtractToken(const Options& m_Options, const httplib::Request& r
     return !error;
 }
 
+WebServer::TokenResult WebServer::ExtractUsernameFromToken(const Options& m_Options, const httplib::Request& req, std::string& out_username)
+{
+    std::string token;
+    if (!DecodeToken(m_Options, req, token))
+    {
+        return TokenResult::Empty;
+    }
+
+    jwt::decoded_jwt<jwt::traits::kazuho_picojson> decoded = jwt::decode(token);
+    if (ExtractToken(m_Options, req, decoded))
+    {
+        if (!decoded.has_payload_claim("username"))
+        {
+            return TokenResult::Invalid;
+        }
+        jwt::claim usernameClaim = decoded.get_payload_claim("username");
+
+        out_username = usernameClaim.as_string();
+
+        return TokenResult::Correct;
+    }
+
+    return TokenResult::Invalid;
+}
+
 WebServer::TokenResult WebServer::ValidateToken(Mongo& mongo, const Options& m_Options, const httplib::Request& req)
 {
     std::string token;
@@ -340,9 +430,14 @@ bool WebServer::ValidateToken(Mongo& mongo, const Options& m_Options, const http
     switch (ValidateToken(mongo, m_Options, req))
     {
     case TokenResult::Correct:
+    {
+        std::string username;
+        ExtractUsernameFromToken(m_Options, req, username);
+        nlohmann::json response = { { "response", "Access granted to protected resource" }, { "username", username } };
         res.status = 200;
-        res.set_content("Access granted to protected resource", "text/plain");
+        res.set_content(response.dump(), "application/json");
         return true;
+    }
 
     case TokenResult::Empty:
         res.status = 401;

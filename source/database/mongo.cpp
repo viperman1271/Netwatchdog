@@ -288,46 +288,32 @@ void Mongo::Serialize(bsoncxx::builder::stream::document& updateBuilder, const n
 {
     for (nlohmann::json::const_iterator it = json.begin(); it != json.end(); ++it)
     {
-        const std::string& key = it.key();
         const nlohmann::json& value = it.value();
         switch (value.type())
         {
-        case nlohmann::json::value_t::object:
-        {
-            bsoncxx::builder::stream::document nestedDocument;
-            Serialize(nestedDocument, value);
-            updateBuilder << key << nestedDocument;
-        }
-        break;
-        case nlohmann::json::value_t::array:
-        {
-            bsoncxx::builder::stream::array nestedArray;
-            Serialize(nestedArray, value);
-            updateBuilder << key << nestedArray;
-        }
-        break;
-
         case nlohmann::json::value_t::string:
-            updateBuilder << key << value.get<std::string>();
+            updateBuilder << it.key() << value.get<std::string>();
             break;
 
         case nlohmann::json::value_t::boolean:
-            updateBuilder << key << value.get<bool>();
+            updateBuilder << it.key() << value.get<bool>();
             break;
 
         case nlohmann::json::value_t::number_float:
-            updateBuilder << key << value.get<float>();
+            updateBuilder << it.key() << value.get<float>();
             break;
 
         case nlohmann::json::value_t::number_integer:
         case nlohmann::json::value_t::number_unsigned:
-            updateBuilder << key << value.get<int>();
+            updateBuilder << it.key() << value.get<int>();
             break;
 
         case nlohmann::json::value_t::null:
-            updateBuilder << key << bsoncxx::types::b_null{};
+            updateBuilder << it.key() << bsoncxx::types::b_null{};
             break;
 
+        case nlohmann::json::value_t::object:
+        case nlohmann::json::value_t::array:
         default:
             assert(false);
             break;
@@ -335,7 +321,7 @@ void Mongo::Serialize(bsoncxx::builder::stream::document& updateBuilder, const n
     }
 }
 
-void Mongo::UpdateUser(const User& modifiedUser)
+bool Mongo::UpdateUser(const User& modifiedUser)
 {
     bsoncxx::builder::stream::document filterBuilder;
     filterBuilder << "_id" << modifiedUser.GetOid();
@@ -363,13 +349,22 @@ void Mongo::UpdateUser(const User& modifiedUser)
 
         nlohmann::json modifiedJson = DiffJson(ssOriginal, ssNew);
 
-        bsoncxx::builder::stream::document updateBuilder;
-        updateBuilder << "$set" << bsoncxx::builder::stream::open_document;
-        Serialize(updateBuilder, modifiedJson);
-        updateBuilder << bsoncxx::builder::stream::close_document;
+        if(modifiedJson.type() != nlohmann::json::value_t::null)
+        {
+            bsoncxx::builder::stream::document updateBuilder;
+            updateBuilder << "$set" << bsoncxx::builder::stream::open_document;
+            Serialize(updateBuilder, modifiedJson);
+            updateBuilder << bsoncxx::builder::stream::close_document;
 
-        collection.update_one(filterBuilder.view(), updateBuilder.view());
+            std::optional<mongocxx::result::update> result = collection.update_one(filterBuilder.view(), updateBuilder.view());
+            if (result)
+            {
+                return true;
+            }
+        }
     }
+
+    return false;
 }
 
 bool Mongo::FetchUser(const std::string& username, User& user)
@@ -474,9 +469,9 @@ nlohmann::json Mongo::DiffJson(const std::stringstream& oldJson, const std::stri
     nlohmann::json oldJsonObj = nlohmann::json::parse(oldJson.str());
     nlohmann::json newJsonObj = nlohmann::json::parse(newJson.str());
 
-    //return DiffJson(oldJsonObj, newJsonObj);
+    return DiffJson(oldJsonObj, newJsonObj);
 
-    return nlohmann::json::diff(oldJsonObj, newJsonObj);
+    //return nlohmann::json::diff(oldJsonObj, newJsonObj);
 }
 
 nlohmann::json Mongo::DiffJson(const nlohmann::json& oldJson, const nlohmann::json& newJson)

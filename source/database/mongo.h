@@ -41,7 +41,7 @@ public:
     void DeleteInfo(Database database, Collection collection, const std::string& clientId);
 
     void CreateUser(User& user);
-    void UpdateUser(const User& user);
+    bool UpdateUser(const User& user);
     bool FetchUser(const std::string& username, User& user);
 
     void CreateApiKey(ApiKey& apiKey);

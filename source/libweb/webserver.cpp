@@ -2,6 +2,18 @@
 
 #include <httplib.h>
 
+#include <string>
+
+constexpr uint32_t StringHash(std::string_view str, uint32_t prime = 31) 
+{
+    uint32_t hash = 0;
+    for (char c : str) 
+    {
+        hash = hash * prime + c;
+    }
+    return hash;
+}
+
 WebServer::WebServer(const Options& options)
     : m_Options(options)
 {
@@ -99,16 +111,50 @@ bool WebServer::Run()
         std::string content;
         ReadFile(filePath, res, content);
 
-        if (req.params.contains("admin"))
+        const std::string& target = req.target;
+        const size_t indexOfQuery = target.find('?');
+        std::string resolvedTarget;
+        if (indexOfQuery != std::string::npos)
         {
-            Utils::ReplaceStrInString(content, "${{TABLE_HEADER}}", "Admin Options");
-            Utils::ReplaceStrInString(content, "${{TABLE_CONTENTS}}", "                            <div id=\"protected-content\"></div>");
+            const size_t indexOfSecondQuery = target.find('&');
+            if (indexOfSecondQuery != std::string::npos)
+            {
+                resolvedTarget = target.substr(indexOfQuery + 1, indexOfSecondQuery - indexOfQuery - 1);
+            }
+            else
+            {
+                resolvedTarget = target.substr(indexOfQuery + 1);
+            }
         }
         else
         {
-            Utils::ReplaceStrInString(content, "${{TABLE_HEADER}}", "");
-            Utils::ReplaceStrInString(content, "${{TABLE_CONTENTS}}", "");
+            Utils::ReplaceStrInString(content, "${{DASHBOARD_CLASS}}", "active");
         }
+
+        switch (StringHash(resolvedTarget))
+        {
+        case StringHash("clients"):
+            Utils::ReplaceStrInString(content, "${{CLIENTS_CLASS}}", "active");
+            break;
+
+        case StringHash("api-keys"):
+            Utils::ReplaceStrInString(content, "${{APIKEYS_CLASS}}", "active");
+            break;
+
+        case StringHash("logs"):
+            Utils::ReplaceStrInString(content, "${{LOGS_CLASS}}", "active");
+            break;
+
+        case StringHash("admin"):
+            Utils::ReplaceStrInString(content, "${{ADMIN_CLASS}}", "active");
+            break;
+        }
+
+        Utils::ReplaceStrInString(content, "${{DASHBOARD_CLASS}}", "text-white");
+        Utils::ReplaceStrInString(content, "${{CLIENTS_CLASS}}", "text-white");
+        Utils::ReplaceStrInString(content, "${{APIKEYS_CLASS}}", "text-white");
+        Utils::ReplaceStrInString(content, "${{LOGS_CLASS}}", "text-white");
+        Utils::ReplaceStrInString(content, "${{ADMIN_CLASS}}", "text-white");
 
         res.set_content(content, "text/html");
     });
@@ -169,6 +215,12 @@ bool WebServer::Run()
 
     svr->Get("/api/dashboard/logs", [&](const httplib::Request& req, httplib::Response& res)
     {
+        Mongo mongo(m_Options);
+        if (!ValidateToken(mongo, m_Options, req, res))
+        {
+            return;
+        }
+
         const std::string clientId = req.get_header_value("Client") != "undefined" ? req.get_header_value("Client") : "";
 
         std::filesystem::path filePath(*m_Options.web.fileServingDir);
@@ -182,7 +234,6 @@ bool WebServer::Run()
         WebTemplate tbody_tr_td(templateFunc("tbody-tr-td.template"));
 
         std::vector<ConnectionInfo> connInfos;
-        Mongo mongo(m_Options);
         mongo.FetchClientInfo(clientId, connInfos);
 
         const std::string baseIndent = "                                    ";

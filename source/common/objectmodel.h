@@ -7,7 +7,23 @@
 
 #include <random>
 
-struct ConnectionInfo final
+struct MongoDatabaseItem
+{
+    void BaseSerialize(bsoncxx::document::view& view)
+    {
+        bsoncxx::oid oid = view["_id"].get_oid().value;
+        m_Oid = oid.to_string();
+    }
+
+    [[nodiscard]] bsoncxx::oid GetOid() const
+    {
+        return bsoncxx::oid{ m_Oid };
+    }
+
+    std::string m_Oid;
+};
+
+struct ConnectionInfo final : public MongoDatabaseItem
 {
     ConnectionInfo()
         : m_Connection(Type::Unknown)
@@ -23,12 +39,12 @@ struct ConnectionInfo final
     };
 
     template<class TSerializer>
-    void serialize(TSerializer& serializer)
+    void Serialize(TSerializer& serializer)
     {
         serializer(cereal::make_nvp("connection", m_ConnectionInteger), cereal::make_nvp("unique-id", m_UniqueId), cereal::make_nvp("time", m_Time));
     }
 
-    void serialize(bsoncxx::builder::stream::document& document)
+    void Serialize(bsoncxx::builder::stream::document& document)
     {
         document << "connection" << m_ConnectionInteger << "unique-id" << m_UniqueId.c_str() << "time" << m_Time;
     }
@@ -42,17 +58,17 @@ struct ConnectionInfo final
     std::chrono::system_clock::duration::rep m_Time;
 };
 
-struct User final
+struct User final : public MongoDatabaseItem
 {
     User();
 
     template<class TSerializer>
-    void serialize(TSerializer& serializer)
+    void Serialize(TSerializer& serializer)
     {
         serializer(cereal::make_nvp("id", m_Id), cereal::make_nvp("email-address", m_EmailAddress), cereal::make_nvp("username", m_Username), cereal::make_nvp("password", m_Password), cereal::make_nvp("admin", m_IsAdmin));
     }
 
-    void serialize(bsoncxx::builder::stream::document& document)
+    void Serialize(bsoncxx::builder::stream::document& document)
     {
         document << "id" << m_Id << "email-address" << m_EmailAddress.c_str() << "username" << m_Username.c_str() << "password" << m_Password << "admin" << m_IsAdmin;
     }
@@ -70,7 +86,7 @@ private:
     std::string m_Password;
 };
 
-struct ApiKey final
+struct ApiKey final : public MongoDatabaseItem
 {
     ApiKey()
         : m_CreationTime(std::chrono::system_clock::now().time_since_epoch().count())
@@ -96,12 +112,12 @@ struct ApiKey final
     };
 
     template<class TSerializer>
-    void serialize(TSerializer& serializer)
+    void Serialize(TSerializer& serializer)
     {
         serializer(cereal::make_nvp("user", m_User), cereal::make_nvp("api-key", m_ApiKey), cereal::make_nvp("creation", m_CreationTime), cereal::make_nvp("expiration", m_Expiration), cereal::make_nvp("permissions", m_PermissionsInteger));
     }
 
-    void serialize(bsoncxx::builder::stream::document& document)
+    void Serialize(bsoncxx::builder::stream::document& document)
     {
         document << "user" << m_User.c_str() << "api-key" << m_ApiKey.c_str() << "creation" << m_CreationTime << "expiration" << m_Expiration << "permissions" << m_PermissionsInteger;
     }

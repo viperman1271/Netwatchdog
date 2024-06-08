@@ -426,9 +426,14 @@ bool WebServer::ValidateToken(Mongo& mongo, const Options& m_Options, const http
     switch (ValidateToken(mongo, m_Options, req))
     {
     case TokenResult::Correct:
+    {
+        std::string username;
+        ExtractUsernameFromToken(m_Options, req, username);
+        nlohmann::json response = { { "response", "Access granted to protected resource" }, { "username", username } };
         res.status = 200;
-        res.set_content("Access granted to protected resource", "text/plain");
+        res.set_content(response.dump(), "application/json");
         return true;
+    }
 
     case TokenResult::Empty:
         res.status = 401;

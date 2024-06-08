@@ -17,11 +17,22 @@ export function checkTokenAndRedirect() {
             }
         })
         .then(data => {
-            console.log('Protected data:', data);
             // Optionally, display the data on the page
             const resultDiv = document.getElementById('result');
             if (resultDiv) {
                 resultDiv.textContent = data;
+            }
+
+            const usernameElem = document.getElementById('username');
+            if(usernameElem) {
+                const jsonObject = JSON.parse(data);
+                var usernameText = jsonObject['username'];
+
+                const length = usernameText.length;
+                if(length > 16) {
+                    usernameText = usernameText.substr(0, 16) + "...";
+                }
+                usernameElem.textContent = usernameText;
             }
         })
         .catch(error => {

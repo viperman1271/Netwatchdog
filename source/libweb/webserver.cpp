@@ -85,6 +85,10 @@ bool WebServer::Run()
     std::cout << "Serving /styles from " << stylesPath << std::endl;
     svr->set_mount_point("/styles", func("styles"));
 
+    const std::string bootstrapPath = func("bootstrap");
+    std::cout << "Serving /bootstrap from " << bootstrapPath << std::endl;
+    svr->set_mount_point("/bootstrap", func("bootstrap"));
+
     svr->Get("/", [&](const httplib::Request& req, httplib::Response& res)
     {
         std::filesystem::path filePath(*m_Options.web.fileServingDir);

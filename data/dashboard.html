@@ -19,6 +19,36 @@
     <script src="/scripts/auth.js" type="module"></script>
     <script src="/scripts/check.js" type="module"></script>
 
+    <style>
+        .hidden-link {
+            visibility: hidden;
+        }
+    </style>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const token = localStorage.getItem('authToken');
+            if (token) {
+                fetch('/api/admin', {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': 'Bearer ' + token
+                    }
+                })
+                .then(response => {
+                    if (response.ok) {
+                        document.getElementById('adminButton').style.visibility = 'visible';
+                    } else {
+                        document.getElementById('adminButton').style.display = 'none';
+                    }
+                })
+                .catch(error => {
+                    document.getElementById('adminButton').style.display = 'none';
+                });
+            }
+        });
+    </script>
+
     <div class="min-h-screen flex">
         <!-- Sidebar -->
         <div id="sidebar" class="w-64 bg-gray-800 text-white flex flex-col transition-width">
@@ -58,6 +88,12 @@
                         <li class="p-4 hover:bg-gray-700 flex items-center">
                             <i class="fas fa-user mr-2"></i>
                             <span class="sidebar-text">Profile</span>
+                        </li>
+                    </a>
+                    <a href="?admin" id="adminButton" class="hidden-link">
+                        <li class="p-4 hover:bg-gray-700 flex items-center">
+                            <i class="fas fa-toolbox mr-2"></i>
+                            <span class="sidebar-text">Admin</span>
                         </li>
                     </a>
                     <a href="?signout">

@@ -62,15 +62,15 @@ bool WebServer::Run()
     };
 
     const std::string imagesPath = func("images");
-    std::cout << "Serving /images from " << imagesPath;
+    std::cout << "Serving /images from " << imagesPath << std::endl;
     svr->set_mount_point("/images", imagesPath);
 
     const std::string scriptsPath = func("scripts");
-    std::cout << "Serving /scripts from " << scriptsPath;
+    std::cout << "Serving /scripts from " << scriptsPath << std::endl;
     svr->set_mount_point("/scripts", func("scripts"));
 
     const std::string stylesPath = func("styles");
-    std::cout << "Serving /styles from " << stylesPath;
+    std::cout << "Serving /styles from " << stylesPath << std::endl;
     svr->set_mount_point("/styles", func("styles"));
 
     svr->Get("/", [&](const httplib::Request& req, httplib::Response& res)

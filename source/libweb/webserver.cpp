@@ -91,13 +91,6 @@ bool WebServer::Run()
         return fileServingDir;
     };
 
-    WebTemplate tbody(templateFunc("tbody.template"));
-    WebTemplate thead(templateFunc("thead.template"));
-    WebTemplate thead_tr(templateFunc("thead-tr.template"));
-    WebTemplate thead_tr_th(templateFunc("thead-tr-th.template"));
-    WebTemplate tbody_tr(templateFunc("tbody-tr.template"));
-    WebTemplate tbody_tr_td(templateFunc("tbody-tr-td.template"));
-
     svr->Get("/dashboard.html", [&](const httplib::Request& req, httplib::Response& res)
     {
         std::filesystem::path filePath(*m_Options.web.fileServingDir);
@@ -106,52 +99,7 @@ bool WebServer::Run()
         std::string content;
         ReadFile(filePath, res, content);
 
-        if (req.params.contains("logs"))
-        {
-            Utils::ReplaceStrInString(content, "${{TABLE_HEADER}}", "Connection Logs");
-
-            std::string clientId{};
-            if (req.params.contains("clientId"))
-            {
-                clientId = req.params.equal_range("clientId").first->second;
-            }
-
-            std::vector<ConnectionInfo> connInfos;
-            Mongo mongo(m_Options);
-            mongo.FetchClientInfo(clientId, connInfos);
-
-            const std::string baseIndent = "                                    ";
-            std::stringstream ss;
-            {
-                WebTemplate::AutoScope tbodyScope(ss, tbody);
-                {
-                    WebTemplate::AutoScope theadScope(ss, thead);
-                    {
-                        WebTemplate::AutoScope thead_tr_Scope(ss, thead_tr);
-                        {
-                            thead_tr_th.Write(ss, { {"${{col_name}}", "conn"}, {"${{col_text}}", "Log Type"} });
-                            thead_tr_th.Write(ss, { {"${{col_name}}", "client"}, {"${{col_text}}", "Client ID"} });
-                            thead_tr_th.Write(ss, { {"${{col_name}}", "time"}, {"${{col_text}}", "Time"} });
-                        }
-                    }
-                }
-                for (const ConnectionInfo& connInfo : connInfos)
-                {
-                    WebTemplate::AutoScope tbody_tr_scope(ss, tbody_tr);
-
-                    char fullLink[256];
-                    sprintf(fullLink, "<a href=\"dashboard.html?logs&clientId=%s\">%s</a>", connInfo.m_UniqueId.c_str(), connInfo.m_UniqueId.c_str());
-
-                    const std::string time = ConvertHighResRepToString(connInfo.m_Time);
-
-                    tbody_tr_td.Write(ss, { {"${{row_text}}", (connInfo.m_Connection == ConnectionInfo::Type::Connection ? "Connection" : "Disconnection")} });
-                    tbody_tr_td.Write(ss, { {"${{row_text}}", fullLink} });
-                    tbody_tr_td.Write(ss, { {"${{row_text}}", time} });
-                }
-            }
-            Utils::ReplaceStrInString(content, "${{TABLE_CONTENTS}}", ss.str());
-        }
-        else if (req.params.contains("admin"))
+        if (req.params.contains("admin"))
         {
             Utils::ReplaceStrInString(content, "${{TABLE_HEADER}}", "Admin Options");
             Utils::ReplaceStrInString(content, "${{TABLE_CONTENTS}}", "                            <div id=\"protected-content\"></div>");
@@ -217,6 +165,47 @@ bool WebServer::Run()
                 }
             }
         }
+    });
+
+    svr->Get("/api/dashboard/logs", [&](const httplib::Request& req, httplib::Response& res)
+    {
+        const std::string clientId = req.get_header_value("Client") != "undefined" ? req.get_header_value("Client") : "";
+
+        std::filesystem::path filePath(*m_Options.web.fileServingDir);
+        filePath /= "dashboard";
+        filePath /= "logs.html";
+
+        std::string content;
+        ReadFile(filePath, res, content);
+
+        WebTemplate tbody_tr(templateFunc("tbody-tr.template"));
+        WebTemplate tbody_tr_td(templateFunc("tbody-tr-td.template"));
+
+        std::vector<ConnectionInfo> connInfos;
+        Mongo mongo(m_Options);
+        mongo.FetchClientInfo(clientId, connInfos);
+
+        const std::string baseIndent = "                                    ";
+        std::stringstream ss;
+        {
+            for (const ConnectionInfo& connInfo : connInfos)
+            {
+                WebTemplate::AutoScope tbody_tr_scope(ss, tbody_tr);
+
+                char fullLink[256];
+                sprintf(fullLink, "<a href=\"dashboard.html?logs&clientId=%s\">%s</a>", connInfo.m_UniqueId.c_str(), connInfo.m_UniqueId.c_str());
+
+                const std::string time = ConvertHighResRepToString(connInfo.m_Time);
+
+                tbody_tr_td.Write(ss, { {"${{row_text}}", (connInfo.m_Connection == ConnectionInfo::Type::Connection ? "Connection" : "Disconnection")} });
+                tbody_tr_td.Write(ss, { {"${{row_text}}", fullLink} });
+                tbody_tr_td.Write(ss, { {"${{row_text}}", time} });
+            }
+        }
+        Utils::ReplaceStrInString(content, "${{TABLE_BODY_CONTENTS}}", ss.str());
+
+        res.status = 200;
+        res.set_content(content, "text/html");
     });
 
     svr->Post("/api/client-info/clear", [&](const httplib::Request& req, httplib::Response& res) 

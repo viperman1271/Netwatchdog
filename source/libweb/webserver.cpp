@@ -106,13 +106,6 @@ bool WebServer::Run()
         std::string content;
         ReadFile(filePath, res, content);
 
-//         if (!validateToken(m_Options, req, res))
-//         {
-//             replaceStrInString(content, "${{TABLE_CONTENTS}}", "");
-//             res.set_content(content, "text/html");
-//             return;
-//         }
-
         if (req.params.contains("logs"))
         {
             Utils::ReplaceStrInString(content, "${{TABLE_HEADER}}", "Connection Logs");
@@ -158,6 +151,11 @@ bool WebServer::Run()
             }
             Utils::ReplaceStrInString(content, "${{TABLE_CONTENTS}}", ss.str());
         }
+        else if (req.params.contains("admin"))
+        {
+            Utils::ReplaceStrInString(content, "${{TABLE_HEADER}}", "Admin Options");
+            Utils::ReplaceStrInString(content, "${{TABLE_CONTENTS}}", "                            <div id=\"protected-content\"></div>");
+        }
         else
         {
             Utils::ReplaceStrInString(content, "${{TABLE_HEADER}}", "");
@@ -171,24 +169,6 @@ bool WebServer::Run()
     {
         Mongo mongo(m_Options);
         ValidateToken(mongo, m_Options, req, res);
-    });
-
-    svr->Get(R"(/api/(.*))", [&](const httplib::Request& req, httplib::Response& res)
-    {
-        res.status = 200;
-        res.set_content("Invalid token", "text/plain");
-    });
-
-    svr->Get(R"(/(.*))", [&](const httplib::Request& req, httplib::Response& res)
-    {
-        const std::string file = req.matches[1];
-
-        std::filesystem::path filePath(*m_Options.web.fileServingDir);
-        filePath /= file;
-
-        std::string content;
-        ReadFile(filePath, res, content);
-        res.set_content(content, "text/html");
     });
 
     svr->Post("/api/login", [&](const httplib::Request& req, httplib::Response& res) 
@@ -216,6 +196,29 @@ bool WebServer::Run()
         }
     });
 
+    svr->Get("/api/admin", [&](const httplib::Request& req, httplib::Response& res)
+    {
+        std::string username;
+        if (ExtractUsernameFromToken(m_Options, req, username) == TokenResult::Correct)
+        {
+            Mongo mongo(m_Options);
+            User user;
+            if (mongo.FetchUser(username, user))
+            {
+                if (user.m_IsAdmin)
+                {
+                    res.status = 200;
+                    res.set_content("Admin access granted", "text/plain");
+                }
+                else
+                {
+                    res.status = 401;
+                    res.set_content("Admin access unauthorized", "text/plain");
+                }
+            }
+        }
+    });
+
     svr->Post("/api/client-info/clear", [&](const httplib::Request& req, httplib::Response& res) 
     {
         auto body = nlohmann::json::parse(req.body);
@@ -223,6 +226,24 @@ bool WebServer::Run()
 
         Mongo mongo(m_Options);
         mongo.DeleteInfo(Mongo::Database::Stats, Mongo::Collection::Connection, clientId);
+    });
+
+    svr->Get(R"(/api/(.*))", [&](const httplib::Request& req, httplib::Response& res)
+    {
+        res.status = 401;
+        res.set_content("Invalid token", "text/plain");
+    });
+
+    svr->Get(R"(/(.*))", [&](const httplib::Request& req, httplib::Response& res)
+    {
+        const std::string file = req.matches[1];
+
+        std::filesystem::path filePath(*m_Options.web.fileServingDir);
+        filePath /= file;
+
+        std::string content;
+        ReadFile(filePath, res, content);
+        res.set_content(content, "text/html");
     });
 
     svr->listen(m_Options.web.host, m_Options.web.secure ? m_Options.web.securePort : m_Options.web.port);
@@ -293,6 +314,31 @@ bool WebServer::ExtractToken(const Options& m_Options, const httplib::Request& r
     verifier.verify(jwtToken, error);
 
     return !error;
+}
+
+WebServer::TokenResult WebServer::ExtractUsernameFromToken(const Options& m_Options, const httplib::Request& req, std::string& out_username)
+{
+    std::string token;
+    if (!DecodeToken(m_Options, req, token))
+    {
+        return TokenResult::Empty;
+    }
+
+    jwt::decoded_jwt<jwt::traits::kazuho_picojson> decoded = jwt::decode(token);
+    if (ExtractToken(m_Options, req, decoded))
+    {
+        if (!decoded.has_payload_claim("username"))
+        {
+            return TokenResult::Invalid;
+        }
+        jwt::claim usernameClaim = decoded.get_payload_claim("username");
+
+        out_username = usernameClaim.as_string();
+
+        return TokenResult::Correct;
+    }
+
+    return TokenResult::Invalid;
 }
 
 WebServer::TokenResult WebServer::ValidateToken(Mongo& mongo, const Options& m_Options, const httplib::Request& req)

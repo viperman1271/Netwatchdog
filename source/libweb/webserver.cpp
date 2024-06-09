@@ -432,6 +432,10 @@ bool WebServer::ValidateToken(Mongo& mongo, const Options& m_Options, const http
     case TokenResult::Correct:
     {
         nlohmann::json response = { { "response", "Access granted to protected resource" }, { "username", user.m_Username }, { "email", user.m_EmailAddress } };
+        if (!user.m_GravatarEmailAddress.empty())
+        {
+            response["gravatar-email"] = user.m_GravatarEmailAddress;
+        }
         res.status = 200;
         res.set_content(response.dump(), "application/json");
         return true;

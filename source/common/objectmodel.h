@@ -4,6 +4,7 @@
 
 #include <bsoncxx/builder/stream/document.hpp>
 #include <cereal/cereal.hpp>
+#include <cereal/types/optional.hpp>
 
 #include <random>
 
@@ -13,6 +14,19 @@ struct MongoDatabaseItem
     {
         bsoncxx::oid oid = view["_id"].get_oid().value;
         m_Oid = oid.to_string();
+    }
+
+    template<class TSerializer, class TValue>
+    void SafeSerialize(TSerializer& serializer, cereal::NameValuePair<TValue> nvp)
+    {
+        try
+        {
+            serializer(nvp);
+        }
+        catch (cereal::Exception)
+        {
+
+        }
     }
 
     [[nodiscard]] bsoncxx::oid GetOid() const
@@ -65,21 +79,30 @@ struct User final : public MongoDatabaseItem
     template<class TSerializer>
     void Serialize(TSerializer& serializer)
     {
-        serializer(cereal::make_nvp("id", m_Id), cereal::make_nvp("email-address", m_EmailAddress), cereal::make_nvp("username", m_Username), cereal::make_nvp("password", m_Password), cereal::make_nvp("admin", m_IsAdmin));
+        SafeSerialize(serializer, cereal::make_nvp("id", m_Id));
+        SafeSerialize(serializer, cereal::make_nvp("email-address", m_EmailAddress));
+        SafeSerialize(serializer, cereal::make_nvp("username", m_Username));
+        SafeSerialize(serializer, cereal::make_nvp("password", m_Password));
+        SafeSerialize(serializer, cereal::make_nvp("admin", m_IsAdmin));
+        SafeSerialize(serializer, cereal::make_nvp("gravatar-email-address", m_GravatarEmailAddress));
     }
 
     void Serialize(bsoncxx::builder::stream::document& document)
     {
         document << "id" << m_Id << "email-address" << m_EmailAddress.c_str() << "username" << m_Username.c_str() << "password" << m_Password << "admin" << m_IsAdmin;
+        if (!m_GravatarEmailAddress.empty())
+        {
+            document << "gravatar-email-address" << m_GravatarEmailAddress;
+        }
     }
 
     bool ValidatePassword(const std::string& unhashedPassword) const;
-
     void SetPassword(const std::string& password);
 
     bool m_IsAdmin;
     std::string m_Id;
     std::string m_EmailAddress;
+    std::string m_GravatarEmailAddress;
     std::string m_Username;
 
 private:

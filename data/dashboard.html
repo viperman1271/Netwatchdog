@@ -114,6 +114,7 @@
 <body>
     <script src="/scripts/auth.js" type="module"></script>
     <script src="/scripts/check.js" type="module"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.0.0/crypto-js.min.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             const token = localStorage.getItem('authToken');
@@ -185,7 +186,7 @@
             <hr>
             <div class="dropdown">
                 <a href="#" class="d-flex align-items-center text-white text-decoration-none dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
-                    <img src="https://github.com/viperman1271.png" alt="" width="32" height="32" class="rounded-circle me-2">
+                    <img id="profile-image" src="/images/android-chrome-192x192.png" alt="" width="32" height="32" class="rounded-circle me-2">
                     <strong id="username">Username</strong>
                 </a>
                 <ul class="dropdown-menu dropdown-menu-dark text-small shadow">
@@ -243,8 +244,41 @@
             }
         }
 
+        async function updateProfileIcon() {
+            const token = localStorage.getItem('authToken');
+            if (token) {
+                const response = await fetch("/api/protected", {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': 'Bearer ' + token
+                    }
+                });
+
+                if (response.ok) {
+                    const content = await response.text();
+                    
+                    const jsonObject = JSON.parse(content);
+                    const username = jsonObject['username'];
+                    const emailAddress = jsonObject['email'];
+                    const gravatarEmailAddress = jsonObject['gravatar-email'];
+
+                    var hashedEmail;
+                    if(gravatarEmailAddress) {
+                        hashedEmail = CryptoJS.SHA256( gravatarEmailAddress );
+                    }
+                    else {
+                        hashedEmail = CryptoJS.SHA256( emailAddress );
+                    }
+
+                    const gravatarUrl = `https://www.gravatar.com/avatar/${hashedEmail}`;
+                    document.getElementById( 'profile-image' ).src = gravatarUrl;
+                }
+            }
+        }
+
         // Example usage: Fetch and insert content from 'page-to-fetch.html' into the 'content' div
         fetchAndInsert();
+        updateProfileIcon();
     </script>
 
     <script src="/scripts/sidebars.js"></script>

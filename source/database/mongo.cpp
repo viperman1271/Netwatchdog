@@ -64,7 +64,7 @@ void Mongo::AddConnectionInfo(ConnectionInfo& connInfo)
     mongocxx::collection coll = db[collectionStr.c_str()];
 
     bsoncxx::builder::stream::document document{};
-    connInfo.serialize(document);
+    connInfo.Serialize(document);
 
     bsoncxx::document::value doc_value = document << bsoncxx::builder::stream::finalize;
     coll.insert_one(doc_value.view());
@@ -182,7 +182,7 @@ bool Mongo::FetchClientInfo(const std::string& clientId, std::vector<ConnectionI
         cereal::JSONInputArchive inputSerializer(ss);
 
         ConnectionInfo info;
-        info.serialize(inputSerializer);
+        info.Serialize(inputSerializer);
 
         connInfo.push_back(std::move(info));
     }
@@ -228,10 +228,143 @@ void Mongo::CreateUser(User& user)
     mongocxx::collection coll = db[collectionStr.c_str()];
 
     bsoncxx::builder::stream::document document{};
-    user.serialize(document);
+    user.Serialize(document);
 
     bsoncxx::document::value doc_value = document << bsoncxx::builder::stream::finalize;
     coll.insert_one(doc_value.view());
+}
+
+void Mongo::Serialize(bsoncxx::builder::stream::array& arr, const nlohmann::json& json)
+{
+    for (const nlohmann::json& value : json)
+    {
+        switch (value.type())
+        {
+        case nlohmann::json::value_t::object:
+        {
+            bsoncxx::builder::stream::document nestedDocument;
+            Serialize(nestedDocument, value);
+            arr << nestedDocument;
+        }
+        break;
+
+        case nlohmann::json::value_t::array:
+        {
+            bsoncxx::builder::stream::array nestedArray;
+            Serialize(nestedArray, value);
+            arr << nestedArray;
+        }
+        break;
+
+        case nlohmann::json::value_t::string:
+            arr << value.get<std::string>();
+            break;
+
+        case nlohmann::json::value_t::boolean:
+            arr << value.get<bool>();
+            break;
+
+        case nlohmann::json::value_t::number_float:
+            arr << value.get<float>();
+            break;
+
+        case nlohmann::json::value_t::number_integer:
+        case nlohmann::json::value_t::number_unsigned:
+            arr << value.get<int>();
+            break;
+
+        case nlohmann::json::value_t::null:
+            arr << bsoncxx::types::b_null{};
+            break;
+
+        default:
+            assert(false);
+            break;
+        };
+    }
+}
+
+void Mongo::Serialize(bsoncxx::builder::stream::document& updateBuilder, const nlohmann::json& json)
+{
+    for (nlohmann::json::const_iterator it = json.begin(); it != json.end(); ++it)
+    {
+        const nlohmann::json& value = it.value();
+        switch (value.type())
+        {
+        case nlohmann::json::value_t::string:
+            updateBuilder << it.key() << value.get<std::string>();
+            break;
+
+        case nlohmann::json::value_t::boolean:
+            updateBuilder << it.key() << value.get<bool>();
+            break;
+
+        case nlohmann::json::value_t::number_float:
+            updateBuilder << it.key() << value.get<float>();
+            break;
+
+        case nlohmann::json::value_t::number_integer:
+        case nlohmann::json::value_t::number_unsigned:
+            updateBuilder << it.key() << value.get<int>();
+            break;
+
+        case nlohmann::json::value_t::null:
+            updateBuilder << it.key() << bsoncxx::types::b_null{};
+            break;
+
+        case nlohmann::json::value_t::object:
+        case nlohmann::json::value_t::array:
+        default:
+            assert(false);
+            break;
+        };
+    }
+}
+
+bool Mongo::UpdateUser(const User& modifiedUser)
+{
+    bsoncxx::builder::stream::document filterBuilder;
+    filterBuilder << "_id" << modifiedUser.GetOid();
+
+    User originalUser;
+    if (FetchUser(modifiedUser.m_Username, originalUser))
+    {
+        const std::string databaseStr = std::move(GetDatabaseName(Database::Meta));
+        mongocxx::database database = m_Client[databaseStr.c_str()];
+
+        const std::string collectionStr = GetCollectionName(Collection::User);
+        mongocxx::collection collection = database[collectionStr.c_str()];
+
+        std::stringstream ssOriginal;
+        {
+            cereal::JSONOutputArchive serializer(ssOriginal);
+            originalUser.Serialize(serializer);
+        }
+
+        std::stringstream ssNew;
+        {
+            cereal::JSONOutputArchive serializer(ssNew);
+            const_cast<User&>(modifiedUser).Serialize(serializer);
+        }
+
+        nlohmann::json modifiedJson = DiffJson(ssOriginal, ssNew);
+
+        if(modifiedJson.type() != nlohmann::json::value_t::null)
+        {
+            bsoncxx::builder::stream::document updateBuilder;
+            updateBuilder << "$set" << bsoncxx::builder::stream::open_document;
+            Serialize(updateBuilder, modifiedJson);
+            updateBuilder << bsoncxx::builder::stream::close_document;
+
+            std::optional<mongocxx::result::update> result = collection.update_one(filterBuilder.view(), updateBuilder.view());
+            if (result)
+            {
+                return true;
+            }
+        }
+    }
+
+    return false;
 }
 
 bool Mongo::FetchUser(const std::string& username, User& user)
@@ -268,7 +401,8 @@ bool Mongo::FetchUser(const std::string& username, User& user)
         std::stringstream ss(json);
         cereal::JSONInputArchive inputSerializer(ss);
 
-        user.serialize(inputSerializer);
+        user.Serialize(inputSerializer);
+        user.BaseSerialize(view);
     }
 
     return anyResults;
@@ -283,7 +417,7 @@ void Mongo::CreateApiKey(ApiKey& apiKey)
     mongocxx::collection coll = db[collectionStr.c_str()];
 
     bsoncxx::builder::stream::document document{};
-    apiKey.serialize(document);
+    apiKey.Serialize(document);
 
     bsoncxx::document::value doc_value = document << bsoncxx::builder::stream::finalize;
     coll.insert_one(doc_value.view());
@@ -324,10 +458,44 @@ void Mongo::FetchApiKeys(const std::string& userId, std::vector<ApiKey>& apiKeys
         cereal::JSONInputArchive inputSerializer(ss);
 
         ApiKey apiKey;
-        apiKey.serialize(inputSerializer);
+        apiKey.Serialize(inputSerializer);
 
         apiKeys.push_back(std::move(apiKey));
     }
+}
+
+nlohmann::json Mongo::DiffJson(const std::stringstream& oldJson, const std::stringstream& newJson)
+{
+    nlohmann::json oldJsonObj = nlohmann::json::parse(oldJson.str());
+    nlohmann::json newJsonObj = nlohmann::json::parse(newJson.str());
+
+    return DiffJson(oldJsonObj, newJsonObj);
+}
+
+nlohmann::json Mongo::DiffJson(const nlohmann::json& oldJson, const nlohmann::json& newJson)
+{
+    nlohmann::json result;
+
+    for (nlohmann::json::const_iterator it = newJson.begin(); it != newJson.end(); ++it)
+    {
+        const std::string& key = it.key();
+        nlohmann::json::const_iterator::reference& newValue = it.value();
+
+        if (oldJson.contains(key))
+        {
+            nlohmann::json::const_iterator::reference& oldValue = oldJson.at(key);
+            if (oldValue != newValue) 
+            {
+                result[key] = newValue;
+            }
+        }
+        else 
+        {
+            result[key] = newValue; // Key only exists in new_json
+        }
+    }
+
+    return result;
 }
 
 std::string Mongo::GetDatabaseName(Database database)

@@ -47,6 +47,6 @@ struct Options
         ConfigurableOption<std::string> userToCreate;
         ConfigurableOption<std::string> userPassword;
         ConfigurableOption<bool> direct{ true };
-        ConfigurableOption<bool> userIsAdmin;
+        ConfigurableOption<bool> userIsAdmin{ false };
     } admin;
 };

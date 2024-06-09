@@ -3,9 +3,11 @@
 #include "objectmodel.h"
 #include "options.h"
 
+#include <bsoncxx/builder/stream/array.hpp>
 #include <mongocxx/client.hpp>
 #include <mongocxx/instance.hpp>
 #include <mongocxx/uri.hpp>
+#include <nlohmann/json.hpp>
 
 #include <vector>
 
@@ -39,6 +41,7 @@ public:
     void DeleteInfo(Database database, Collection collection, const std::string& clientId);
 
     void CreateUser(User& user);
+    bool UpdateUser(const User& user);
     bool FetchUser(const std::string& username, User& user);
 
     void CreateApiKey(ApiKey& apiKey);
@@ -50,6 +53,11 @@ private:
 
     bool DatabaseExists(const std::string& database) const;
     bool CollectionExists(mongocxx::database& database, const std::string& collectionName) const;
+
+    static nlohmann::json DiffJson(const std::stringstream& oldJson, const std::stringstream& newJson);
+    static nlohmann::json DiffJson(const nlohmann::json& oldJson, const nlohmann::json& newJson);
+    static void Serialize(bsoncxx::builder::stream::array& array, const nlohmann::json& it);
+    static void Serialize(bsoncxx::builder::stream::document& updateBuilder, const nlohmann::json& it);
 
 private:
     static mongocxx::instance ms_Instance;

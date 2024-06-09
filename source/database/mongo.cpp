@@ -470,8 +470,6 @@ nlohmann::json Mongo::DiffJson(const std::stringstream& oldJson, const std::stri
     nlohmann::json newJsonObj = nlohmann::json::parse(newJson.str());
 
     return DiffJson(oldJsonObj, newJsonObj);
-
-    //return nlohmann::json::diff(oldJsonObj, newJsonObj);
 }
 
 nlohmann::json Mongo::DiffJson(const nlohmann::json& oldJson, const nlohmann::json& newJson)

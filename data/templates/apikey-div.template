@@ -1,0 +1,6 @@
+{
+    "start" : "            <div><h6 class=\"my-0\">${{api_key_name}}</h6><small class=\"text-body-secondary\">${{expiration_date}} | ${{permissions}}</small></div>",
+    "nl-start" : true,
+    "end" : "",
+    "nl-end" : false
+}

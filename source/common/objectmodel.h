@@ -137,18 +137,24 @@ struct ApiKey final : public MongoDatabaseItem
     template<class TSerializer>
     void Serialize(TSerializer& serializer)
     {
-        serializer(cereal::make_nvp("user", m_User), cereal::make_nvp("api-key", m_ApiKey), cereal::make_nvp("creation", m_CreationTime), cereal::make_nvp("expiration", m_Expiration), cereal::make_nvp("permissions", m_PermissionsInteger));
+        SafeSerialize(serializer, cereal::make_nvp("user", m_User));
+        SafeSerialize(serializer, cereal::make_nvp("api-key", m_ApiKey));
+        SafeSerialize(serializer, cereal::make_nvp("name", m_Name));
+        SafeSerialize(serializer, cereal::make_nvp("creation", m_CreationTime));
+        SafeSerialize(serializer, cereal::make_nvp("expiration", m_Expiration));
+        SafeSerialize(serializer, cereal::make_nvp("permissions", m_PermissionsInteger));
     }
 
     void Serialize(bsoncxx::builder::stream::document& document)
     {
-        document << "user" << m_User.c_str() << "api-key" << m_ApiKey.c_str() << "creation" << m_CreationTime << "expiration" << m_Expiration << "permissions" << m_PermissionsInteger;
+        document << "user" << m_User.c_str() << "api-key" << m_ApiKey.c_str() << "name" << m_Name.c_str() << "creation" << m_CreationTime << "expiration" << m_Expiration << "permissions" << m_PermissionsInteger;
     }
 
     void Generate();
 
     std::string m_User;
     std::string m_ApiKey;
+    std::string m_Name;
     std::chrono::system_clock::duration::rep m_CreationTime;
     std::chrono::system_clock::duration::rep m_Expiration;
     union

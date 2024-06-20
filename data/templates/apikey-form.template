@@ -1,0 +1,6 @@
+{
+    "start" : "            <form><button type=\"submit\" class=\"btn btn-danger\"><strong>Delete</strong></button></form>",
+    "nl-start" : true,
+    "end" : "",
+    "nl-end" : false
+}

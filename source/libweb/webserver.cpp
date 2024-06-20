@@ -263,6 +263,50 @@ bool WebServer::Run()
         res.set_content(content, "text/html");
     });
 
+    svr->Get("/api/dashboard/api-keys", [&](const httplib::Request& req, httplib::Response& res)
+    {
+        Mongo mongo(m_Options);
+        if (!ValidateToken(mongo, m_Options, req, res))
+        {
+            return;
+        }
+
+        std::string username;
+        if (ExtractUsernameFromToken(m_Options, req, username) == TokenResult::Correct)
+        {
+            std::filesystem::path filePath(*m_Options.web.fileServingDir);
+            filePath /= "dashboard";
+            filePath /= "api-keys.html";
+
+            std::string content;
+            ReadFile(filePath, res, content);
+
+            WebTemplate li("apikey-li.template");
+            WebTemplate div("apikey-div.template");
+            WebTemplate form("apikey-form.template");
+
+            std::vector<ApiKey> apiKeys;
+            mongo.FetchApiKeys(username, apiKeys);
+
+            std::stringstream ss;
+            for (const ApiKey& apiKey : apiKeys)
+            {
+                WebTemplate::AutoScope li_scope(ss, li);
+                {
+                    std::string expirationDate;
+                    std::string permissions;
+                    div.Write(ss, { { "${{api_key_name}}", apiKey.m_Name }, { "${{expiration_date}}", expirationDate }, { "${{permissions}}", permissions } });
+                    form.Write(ss, { });
+                }
+            }
+
+            Utils::ReplaceStrInString(content, "${{CONTENTS}}", ss.str());
+
+            res.status = 200;
+            res.set_content(content, "text/html");
+        }
+    });
+
     svr->Post("/api/client-info/clear", [&](const httplib::Request& req, httplib::Response& res) 
     {
         auto body = nlohmann::json::parse(req.body);
